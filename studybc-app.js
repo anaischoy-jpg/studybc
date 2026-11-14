@@ -3,6 +3,7 @@
   const data = window.STUDYBC_DATA;
   const progressKey = 'studybc-progress-v2';
   const themeKey = 'studybc-theme';
+  const flashcardsKey = 'studybc-custom-flashcards-v1';
   const focusTimer = {
     durationSeconds: 25 * 60,
     remainingSeconds: 25 * 60,
@@ -36,6 +37,10 @@
     tutorUnit: '',
     tutorPrompt: '',
     tutorBreakdown: null,
+    customFlashcards: [],
+    flashcardIndex: 0,
+    flashcardRevealed: false,
+    flashcardNotice: '',
     feedbackDraft: null,
     preparedFeedback: null,
     installHelp: false,
@@ -202,6 +207,61 @@
     } catch (error) {
       showStorageNotice('save');
     }
+  }
+
+  function loadCustomFlashcards() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(flashcardsKey) || '[]');
+      state.customFlashcards = Array.isArray(saved)
+        ? saved.filter(card => typeof card.front === 'string' && typeof card.back === 'string')
+          .slice(0, 500)
+          .map(card => ({ front: card.front.slice(0, 500), back: card.back.slice(0, 1500) }))
+        : [];
+    } catch (error) {
+      console.error('StudyBC could not load your custom flashcards.', error);
+      state.flashcardNotice = 'Saved flashcards could not be read in this browser.';
+    }
+  }
+
+  function saveCustomFlashcards() {
+    try {
+      localStorage.setItem(flashcardsKey, JSON.stringify(state.customFlashcards));
+      return true;
+    } catch (error) {
+      console.error('StudyBC could not save your custom flashcards.', error);
+      state.flashcardNotice = 'Flashcards could not be saved. Check available browser storage.';
+      return false;
+    }
+  }
+
+  function parseFlashcardFile(text) {
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (/^(front|term|question)\s*[,|\t]/i.test(lines[0] || '')) lines.shift();
+    return lines.slice(0, 200).map(line => {
+      const separator = line.includes('\t') ? '\t' : line.includes('|') ? '|' : ',';
+      const parts = [];
+      let value = '';
+      let quoted = false;
+      for (let index = 0; index < line.length; index += 1) {
+        const character = line[index];
+        if (character === '"' && quoted && line[index + 1] === '"') {
+          value += '"';
+          index += 1;
+        } else if (character === '"') {
+          quoted = !quoted;
+        } else if (character === separator && !quoted) {
+          parts.push(value.trim());
+          value = '';
+        } else {
+          value += character;
+        }
+      }
+      if (quoted) return null;
+      parts.push(value.trim());
+      const front = (parts.shift() || '').slice(0, 500);
+      const back = parts.join(separator).slice(0, 1500);
+      return front && back ? { front, back } : null;
+    }).filter(Boolean);
   }
 
   function saveAssessment(attempt) {
@@ -471,6 +531,19 @@
         const selected = state.quizSelections[key];
         return `<article class="practice-item"><span class="question-number">Question ${index + 1} · ${escapeHtml(item.lesson.title)}</span><p class="question-prompt">${escapeHtml(item.question.question)}</p><div class="mcq-list">${item.question.options.map((option, optionIndex) => `<button type="button" class="option-button ${selected === optionIndex ? 'selected' : ''}" data-quiz-choice="${escapeHtml(key)}" data-choice="${optionIndex}"><span class="option-letter">${String.fromCharCode(65 + optionIndex)}</span>${escapeHtml(option)}</button>`).join('')}</div></article>`;
       }).join('')}<button class="primary-button" type="button" data-submit-quiz>Submit ${escapeHtml(mode.toLowerCase())}</button></div>` : '<p>There are no scored multiple-choice questions in this selection yet. Try another unit or return to lessons for reflection practice.</p>'}</section>` : `<section class="info-box"><h2>Ready when you are</h2><p>${questions.length ? `${questions.length} scored questions are available. Choose a unit to make a focused quiz, or use the full course test.` : 'This selection has no scored multiple-choice questions yet.'} Reflections are kept in the lesson practice and are not treated as right-or-wrong test answers.</p><button class="primary-button" type="button" data-start-quiz ${questions.length ? '' : 'disabled'}>Start ${escapeHtml(mode.toLowerCase())}</button></section>`}
+    </div>`;
+  }
+
+  function renderFlashcardsPage() {
+    const card = state.customFlashcards[state.flashcardIndex % Math.max(state.customFlashcards.length, 1)];
+    return `<div class="page-shell tool-page">
+      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your classroom materials</span><h1>My flashcards</h1><p>Create cards from class notes or import a TXT/CSV file. Content stays in this browser and is not uploaded to StudyBC.</p></div><div class="course-progress-card"><strong>${state.customFlashcards.length}</strong><span>custom cards saved</span></div></header>
+      <section class="info-box flashcard-tools">
+        <form class="flashcard-form" id="custom-flashcard-form"><label for="flashcard-front">Front</label><textarea id="flashcard-front" name="front" rows="2" maxlength="500" required placeholder="Term, question, formula, or prompt"></textarea><label for="flashcard-back">Back</label><textarea id="flashcard-back" name="back" rows="3" maxlength="1500" required placeholder="Definition, answer, or explanation"></textarea><button class="primary-button" type="submit">Add flashcard</button></form>
+        <form class="flashcard-upload-form" id="flashcard-upload-form"><label for="flashcard-file">Import cards (.txt or .csv)</label><input id="flashcard-file" type="file" accept=".txt,.csv,text/plain,text/csv" required><p class="content-note">One card per line: front,back (or use a tab or |). CSV headers such as front,back are optional.</p><button class="secondary-button" type="submit">Import file</button></form>
+      </section>
+      ${state.flashcardNotice ? `<p class="storage-notice" role="status">${escapeHtml(state.flashcardNotice)}</p>` : ''}
+      ${card ? `<section class="info-box flashcard-review"><div class="practice-heading"><div><span class="eyebrow">Active recall</span><h2>Card ${state.flashcardIndex % state.customFlashcards.length + 1} of ${state.customFlashcards.length}</h2></div><span class="question-count">Your material</span></div><article class="custom-flashcard" aria-live="polite"><span class="eyebrow">${state.flashcardRevealed ? 'Answer' : 'Prompt'}</span><p>${escapeHtml(state.flashcardRevealed ? card.back : card.front)}</p></article><div class="flashcard-actions">${state.flashcardRevealed ? `<button class="secondary-button" type="button" data-flashcard-action="again">Review again</button><button class="primary-button" type="button" data-flashcard-action="next">Got it · next</button>` : `<button class="primary-button" type="button" data-flashcard-action="reveal">Reveal answer</button>`}</div><details class="custom-card-list"><summary>Manage ${state.customFlashcards.length} saved cards</summary><ul>${state.customFlashcards.map((item, index) => `<li><span><strong>${escapeHtml(item.front)}</strong><small>${escapeHtml(item.back)}</small></span><button class="secondary-button" type="button" data-delete-flashcard="${index}" aria-label="Delete ${escapeHtml(item.front)}">Delete</button></li>`).join('')}</ul></details></section>` : `<section class="info-box"><h2>No custom cards yet</h2><p>Add one above or import a class-notes file to start practicing.</p></section>`}
     </div>`;
   }
 
@@ -969,7 +1042,8 @@
         : state.view === 'lesson' ? renderLesson(course)
           : state.view === 'progress' ? renderProgressPage()
             : state.view === 'quizzes' ? renderQuizPage()
-              : state.view === 'tutor' ? renderTutorPage()
+            : state.view === 'flashcards' ? renderFlashcardsPage()
+            : state.view === 'tutor' ? renderTutorPage()
                 : state.view === 'about' ? renderAboutPage()
                   : state.view === 'sources' ? renderSourcesPage()
                     : state.view === 'focus' ? renderFocusTimerPage()
@@ -978,7 +1052,7 @@
       ${showSidebar ? renderSidebar() : ''}
       <main class="main-panel">
         <header class="topbar">${renderBreadcrumbs()}<div class="topbar-actions">${searchBox('global-search', 'Search StudyBC', 'topbar-search')}<button class="theme-toggle secondary-button" type="button" data-toggle-theme aria-label="Switch to ${state.theme === 'dark' ? 'light' : 'dark'} mode" title="Toggle light and dark mode"><i class="fa-solid ${state.theme === 'dark' ? 'fa-sun' : 'fa-moon'}" aria-hidden="true"></i><span>${state.theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="secondary-button command-trigger" type="button" aria-label="Open search"><span class="search-shortcut">⌘K</span><span>Search</span></button></div></header>
-        <nav class="study-nav" aria-label="StudyBC pages">${[['home', 'Library', 'fa-house'], ['mylist', `My list (${progress.myList.length})`, 'fa-bookmark'], ['progress', 'Progress', 'fa-chart-simple'], ['quizzes', 'Quizzes & tests', 'fa-clipboard-check'], ['focus', 'Focus timer', 'fa-clock'], ['tutor', 'Lesson finder', 'fa-lightbulb'], ['sources', 'Sources', 'fa-book-open'], ['about', 'About', 'fa-circle-info'], ['feedback', 'Feedback', 'fa-comment-dots']].map(([view, label, icon]) => `<button type="button" class="${state.view === view ? 'active' : ''}" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ''}><i class="fa-solid ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}${appInstalled ? '<span class="installed-app-label"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> App installed</span>' : '<button type="button" class="install-app-button" data-install-app><i class="fa-solid fa-download" aria-hidden="true"></i> Install app</button>'}</nav>
+        <nav class="study-nav" aria-label="StudyBC pages">${[['home', 'Library', 'fa-house'], ['mylist', `My list (${progress.myList.length})`, 'fa-bookmark'], ['progress', 'Progress', 'fa-chart-simple'], ['quizzes', 'Quizzes & tests', 'fa-clipboard-check'], ['flashcards', 'My flashcards', 'fa-clone'], ['focus', 'Focus timer', 'fa-clock'], ['tutor', 'Lesson finder', 'fa-lightbulb'], ['sources', 'Sources', 'fa-book-open'], ['about', 'About', 'fa-circle-info'], ['feedback', 'Feedback', 'fa-comment-dots']].map(([view, label, icon]) => `<button type="button" class="${state.view === view ? 'active' : ''}" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ''}><i class="fa-solid ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}${appInstalled ? '<span class="installed-app-label"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> App installed</span>' : '<button type="button" class="install-app-button" data-install-app><i class="fa-solid fa-download" aria-hidden="true"></i> Install app</button>'}</nav>
         ${state.notice ? `<div class="storage-notice" role="status"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>${escapeHtml(state.notice)}</div>` : ''}
         ${state.view !== 'home' && state.search && !state.commandOpen ? renderSearchResults(state.search) : ''}
         ${content}
@@ -1080,7 +1154,9 @@
 
   root.addEventListener('change', event => {
     const target = event.target;
-    if (target.matches('#focus-sound')) {
+    if (target.matches('#flashcard-file')) {
+      state.flashcardNotice = '';
+    } else if (target.matches('#focus-sound')) {
       focusTimer.soundMode = target.value === 'brown' ? 'brown' : 'rain';
       if (focusTimer.ambientOn) startAmbientSound();
       else render();
@@ -1114,7 +1190,61 @@
 
   root.addEventListener('submit', event => {
     const form = event.target;
-    if (form.id === 'tutor-form') {
+    if (form.id === 'custom-flashcard-form') {
+      event.preventDefault();
+      const values = new FormData(form);
+      const card = {
+        front: String(values.get('front') || '').trim(),
+        back: String(values.get('back') || '').trim()
+      };
+      if (card.front && card.back && state.customFlashcards.length < 500) {
+        state.customFlashcards.unshift(card);
+        state.flashcardIndex = 0;
+        state.flashcardRevealed = false;
+        state.flashcardNotice = 'Flashcard added.';
+        saveCustomFlashcards();
+      } else if (state.customFlashcards.length >= 500) {
+        state.flashcardNotice = 'The local deck limit is 500 cards. Delete cards before adding more.';
+      }
+      render();
+    } else if (form.id === 'flashcard-upload-form') {
+      event.preventDefault();
+      const file = form.querySelector('#flashcard-file').files?.[0];
+      if (!file) {
+        state.flashcardNotice = 'Choose a TXT or CSV file first.';
+        render();
+        return;
+      }
+      if (file.size > 1024 * 1024) {
+        state.flashcardNotice = 'Files must be 1 MB or smaller.';
+        render();
+        return;
+      }
+      file.text().then(text => {
+        const cards = parseFlashcardFile(text);
+        if (!cards.length) {
+          state.flashcardNotice = 'No cards found. Add one front/back pair per line, separated by a comma, tab, or |.';
+          render();
+          return;
+        }
+        const importedCount = Math.min(cards.length, 500 - state.customFlashcards.length);
+        if (!importedCount) {
+          state.flashcardNotice = 'The local deck limit is 500 cards. Delete cards before importing more.';
+          render();
+          return;
+        }
+        state.customFlashcards = [...cards.slice(0, importedCount), ...state.customFlashcards];
+        state.flashcardIndex = 0;
+        state.flashcardRevealed = false;
+        state.flashcardNotice = `${importedCount} card${importedCount === 1 ? '' : 's'} imported${cards.length > 200 ? ' (first 200 from file)' : ''}.`;
+        saveCustomFlashcards();
+        render();
+      }).catch(error => {
+        console.error('StudyBC could not read the selected flashcard file.', error);
+        state.flashcardNotice = 'The selected file could not be read.';
+        render();
+      });
+    } else if (form.id === 'tutor-form') {
       event.preventDefault();
       const course = courseById(state.tutorCourseId);
       const unitName = state.tutorUnit || course.units[0]?.name || '';
@@ -1161,6 +1291,27 @@
       state.lessonTab = target.dataset.lessonTab;
       render();
       root.querySelector(`[data-lesson-tab="${CSS.escape(state.lessonTab)}"]`)?.focus();
+      return;
+    }
+    if (target.matches('[data-flashcard-action]')) {
+      if (target.dataset.flashcardAction === 'reveal') {
+        state.flashcardRevealed = true;
+      } else {
+        if (target.dataset.flashcardAction === 'next') {
+          state.flashcardIndex = (state.flashcardIndex + 1) % state.customFlashcards.length;
+        }
+        state.flashcardRevealed = false;
+      }
+      render();
+      return;
+    }
+    if (target.matches('[data-delete-flashcard]')) {
+      state.customFlashcards.splice(Number(target.dataset.deleteFlashcard), 1);
+      state.flashcardIndex = Math.min(state.flashcardIndex, Math.max(state.customFlashcards.length - 1, 0));
+      state.flashcardRevealed = false;
+      state.flashcardNotice = 'Flashcard deleted.';
+      saveCustomFlashcards();
+      render();
       return;
     }
     if (target.matches('[data-view]')) {
@@ -1459,6 +1610,7 @@
   });
 
   loadProgress();
+  loadCustomFlashcards();
   try {
     const storedTheme = localStorage.getItem(themeKey);
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;

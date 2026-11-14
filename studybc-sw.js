@@ -1,8 +1,8 @@
-const CACHE_NAME = 'studybc-shell-v6';
+const CACHE_NAME = 'studybc-shell-v7';
 const APP_SHELL = [
   './',
   './index.html',
-  './studybc.html',
+  './in.html',
   './style.css',
   './studybc-data.js',
   './studybc-extra-data.js',
@@ -13,6 +13,10 @@ const APP_SHELL = [
   './studybc-source/data-ap.js',
   './studybc-source/adapter.js',
   './studybc-fm10-lessons.js',
+  './studybc-accounting-lessons.js',
+  './studybc-business-lessons.js',
+  './studybc-chemistry-lessons.js',
+  './studybc-generated-lessons.js',
   './studybc-app.js',
   './studybc-manifest.json',
   './studybc-icon-192.png',
