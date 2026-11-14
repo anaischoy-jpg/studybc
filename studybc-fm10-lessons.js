@@ -6,7 +6,128 @@
   }
 
   const curriculumUrl = 'https://curriculum.gov.bc.ca/curriculum/mathematics/10/foundations-of-mathematics-and-pre-calculus';
+  const rightTriangleDiagram = ({ title, caption, theta, opposite, adjacent, hypotenuse, callout, highlight }) => ({
+    title,
+    caption: `${caption} Triangle is schematic, not to scale.`,
+    viewBox: '0 0 620 300',
+    svg: `<path class="diagram-outline" d="M150 225 L150 65 L390 225 Z"/>
+      <path class="diagram-highlight" d="${highlight === 'opposite' ? 'M150 225 L150 65' : highlight === 'adjacent' ? 'M150 225 L390 225' : highlight === 'hypotenuse' ? 'M150 65 L390 225' : 'M150 225 L150 65 M150 225 L390 225 M150 65 L390 225'}"/>
+      <path class="diagram-outline" d="M150 205 L170 205 L170 225"/>
+      <path class="diagram-outline diagram-muted" d="M352 225 A38 38 0 0 1 360 202"/>
+      <text class="diagram-label" x="143" y="196" text-anchor="end" font-size="16">90°</text>
+      <text class="diagram-label" x="345" y="214" font-size="16">${theta === 'θ' ? 'θ' : `θ = ${theta}`}</text>
+      <text class="diagram-label" x="132" y="140" text-anchor="end" font-size="13">Opposite</text>
+      <text class="diagram-label" x="132" y="158" text-anchor="end" font-size="13">${opposite}</text>
+      <text class="diagram-label" x="270" y="252" text-anchor="middle" font-size="15">Adjacent: ${adjacent}</text>
+      <text class="diagram-label" x="285" y="122" text-anchor="middle" font-size="15" transform="rotate(34 285 122)">Hypotenuse: ${hypotenuse}</text>
+      <rect class="diagram-highlight-fill" x="420" y="95" width="170" height="90" rx="14"/>
+      <text class="diagram-label" x="505" y="132" text-anchor="middle" font-size="16">${callout}</text>
+      <text class="diagram-label diagram-muted" x="505" y="158" text-anchor="middle" font-size="12">reference angle shown</text>`
+  });
   const specs = [
+    {
+      unit: 'Number & Operations', title: 'Real-number system',
+      idea: 'The real numbers include every number on the number line. They split into two groups: rational numbers, which can be written as a fraction of integers, and irrational numbers, which cannot. Integers and whole numbers are nested subsets of the rational numbers.',
+      example: 'Classify −4, 0, 3/4, √25, and √7 as rational or irrational.',
+      steps: ['−4 is an integer, so it is rational: −4 = −4/1.', '0 is a whole number and rational: 0 = 0/1.', '3/4 is already a ratio of integers.', '√25 = 5, so it is rational.', '√7 is irrational because 7 is not a perfect square; its decimal does not terminate or repeat.'],
+      result: 'Rational: −4, 0, 3/4, √25. Irrational: √7.',
+      question: 'Which number is irrational?', options: ['0.25', '−8', '√2', '√49'], correct: '√2',
+      reason: '√2 cannot be written as a ratio of integers. The other choices equal 1/4, an integer, and 7.',
+      numericQuestion: 'How many of −2, 0, √5, and 3/4 are rational?', numericAnswer: 3,
+      numericReason: '−2, 0, and 3/4 are rational. √5 is irrational because 5 is not a perfect square.',
+      terms: [['Natural numbers', 'Counting numbers: 1, 2, 3, … (some conventions include 0; check the course convention).'], ['Whole numbers', 'The non-negative integers: 0, 1, 2, 3, …'], ['Integers', 'Whole numbers and their negatives.'], ['Rational number', 'A number expressible as a/b, where a and b are integers and b ≠ 0.'], ['Irrational number', 'A real number that cannot be expressed as a ratio of integers.']],
+      mistake: 'Assuming every decimal is irrational. A terminating or repeating decimal is rational.',
+      summary: ['Natural ⊂ whole ⊂ integers ⊂ rational ⊂ real.', 'Terminating and repeating decimals are rational.', 'A non-perfect-square positive integer has an irrational square root.', 'To compare negatives, the value farther left on the number line is smaller.'],
+      formula: 'Rational: a/b, a,b ∈ ℤ, b ≠ 0',
+      goals: ['Classify numbers as natural, whole, integer, rational, or irrational', 'Recognize rational numbers from fractions and decimal forms', 'Compare and order real numbers using exact values and estimates'],
+      sections: [
+        { heading: 'How the number sets fit together', content: 'Every natural number is whole, every whole number is an integer, every integer is rational, and every rational number is real. For example, 5 belongs to all five sets. The number −5 is an integer and rational but not whole. The number 2/3 is rational but not an integer. The number √2 is real but irrational.' },
+        { heading: 'Recognize rational and irrational values', content: 'A rational number has a fraction form with integer numerator and nonzero integer denominator. Its decimal terminates (0.125 = 1/8) or repeats a pattern (0.333… = 1/3). An irrational decimal neither terminates nor repeats; π and √2 are examples. A square root of a non-negative integer is rational exactly when the integer is a perfect square.' },
+        { heading: 'Locate and compare values', content: 'Use a number line and bounds to compare exact values. Since 3² = 9 and 4² = 16, √10 lies between 3 and 4. More closely, 3.1² = 9.61 and 3.2² = 10.24, so √10 lies between 3.1 and 3.2. For negative values, reverse the size comparison: −√10 is less than −3 because −3.16 is left of −3.' }
+      ],
+      diagram: {
+        title: 'Nested number sets',
+        caption: 'Each inner set is contained in the next: natural numbers are whole, whole numbers are integers, integers are rational, and rational numbers are real. Irrational numbers are real but not rational.',
+        viewBox: '0 0 620 300',
+        svg: `<rect class="diagram-outline" x="24" y="22" width="570" height="250" rx="18"/>
+          <text class="diagram-label" x="42" y="50" font-size="17">Real numbers (ℝ)</text>
+          <rect class="diagram-outline" x="58" y="68" width="500" height="176" rx="16"/>
+          <text class="diagram-label" x="76" y="96" font-size="16">Rational (ℚ)</text>
+          <rect class="diagram-highlight-fill" x="92" y="112" width="290" height="104" rx="14"/>
+          <text class="diagram-label" x="108" y="139" font-size="15">Integers (ℤ)</text>
+          <rect class="diagram-outline" x="128" y="146" width="220" height="66" rx="12"/>
+          <rect class="diagram-highlight-fill" x="144" y="157" width="108" height="44" rx="9"/>
+          <text class="diagram-label" x="198" y="184" text-anchor="middle" font-size="13">ℕ: 1, 2, …</text>
+          <text class="diagram-label" x="267" y="176" font-size="13">Whole</text>
+          <text class="diagram-label" x="267" y="195" font-size="12">0, 1, 2, …</text>
+          <text class="diagram-label" x="418" y="145" font-size="15">Irrational</text>
+          <text class="diagram-label" x="418" y="169" font-size="14">√2, π</text>
+          <text class="diagram-label diagram-muted" x="418" y="196" font-size="12">real, not rational</text>`
+      },
+      examples: [
+        { prompt: 'Classify −4, 0, 3/4, √25, and √7 as rational or irrational.', steps: ['−4 = −4/1, so it is rational.', '0 = 0/1, so it is rational.', '3/4 is a ratio of integers, so it is rational.', '√25 = 5, so it is rational.', '7 is not a perfect square, so √7 is irrational.'], answer: 'Rational: −4, 0, 3/4, √25. Irrational: √7.' },
+        { prompt: 'Order −√10, −3, 0, and √10 from least to greatest.', steps: ['Since 9 < 10 < 16, 3 < √10 < 4.', 'Therefore −4 < −√10 < −3; the negative reverses the positive comparison.', 'Both negative values are less than 0, and √10 is positive.'], answer: '−√10, −3, 0, √10.' }
+      ],
+      questions: [
+        { prompt: 'Which decimal represents a rational number?', options: ['0.1010010001… with no repeating block', '0.272727…', 'π', '√3'], correct: 1, explanation: '0.272727… repeats the block 27, so it is rational (27/99 = 3/11).' },
+        { prompt: 'Which comparison is true?', options: ['−√10 > −3', '−√10 < −3', '√10 < 3', '√10 = 10'], correct: 1, explanation: '√10 is about 3.16, so −√10 is about −3.16, which is less than −3.' }
+      ],
+      cheatSheet: ['Terminating or repeating decimal → rational', '√n is rational when n is a perfect square integer', 'Check squares to bound √n', 'Negating reverses the order on the number line']
+    },
+    {
+      unit: 'Number & Operations', title: 'Radicals',
+      idea: 'A square root asks which non-negative number, multiplied by itself, gives the radicand. For example, √49 = 7 because 7² = 49. Some roots are irrational: √2 cannot be written as a terminating or repeating decimal, so we keep it exact unless an estimate is useful.',
+      example: 'Simplify √72.',
+      steps: ['Find the largest perfect-square factor: 72 = 36 × 2.', 'Separate the factors under the radical: √72 = √36 × √2.', 'Evaluate the perfect-square root: √36 = 6.', 'The remaining factor 2 has no square factor greater than 1.'],
+      result: '√72 = 6√2.',
+      question: 'Simplify √48.', options: ['4√3', '3√4', '8√6', '24'], correct: '4√3',
+      reason: 'Factor 48 = 16 × 3. Then √48 = √16 × √3 = 4√3.',
+      numericQuestion: 'Estimate √20 to the nearest tenth.', numericAnswer: 4.5,
+      numericReason: '√20 ≈ 4.472, which rounds to 4.5 to the nearest tenth.',
+      terms: [['Radical', 'An expression containing a root symbol, such as √7.'], ['Radicand', 'The number or expression under a radical sign.'], ['Principal square root', 'The non-negative number whose square equals a given non-negative number.'], ['Mixed radical', 'A simplified radical with a factor outside the root, such as 6√2.'], ['Irrational number', 'A real number that cannot be expressed as a ratio of integers; its decimal neither terminates nor repeats.']],
+      mistake: 'Splitting a sum under a radical: √(a + b) is generally not √a + √b.',
+      summary: ['√n is the non-negative number whose square is n.', 'Simplify by factoring out perfect squares.', 'Combine only like radicals, and only after simplifying.', 'Use an exact radical or a clearly labelled decimal estimate as appropriate.'],
+      formula: '√(a²b) = a√b for a ≥ 0, b ≥ 0',
+      goals: ['Explain the principal square root and how it relates to squaring', 'Simplify square roots by factoring out perfect squares', 'Add and subtract like radicals after simplifying', 'Use exact radical values and estimate when context calls for a decimal'],
+      sections: [
+        { heading: 'What a square root means', content: 'The principal square root √n is the non-negative value whose square is n. Since 7² = 49, √49 = 7. The equation x² = 49 has two solutions, x = 7 and x = −7; the radical symbol √49 names only the principal root, 7. A negative number has no real square root.' },
+        { heading: 'Simplify and convert radicals', content: 'A radical is simplified when no perfect-square factor greater than 1 remains inside it. Factor the radicand, take the root of each perfect-square factor, and leave the remaining factor under the radical. For example, √72 = 6√2. To convert back to an entire radical, move the outside factor under the root by squaring it: 6√2 = √(6² × 2) = √72. For variables, √(x²) = |x| for real x, because a principal square root cannot be negative.' },
+        { heading: 'Multiply radicals', content: 'For non-negative radicands, √a × √b = √(ab). Multiply any outside coefficients as well, then simplify the resulting radical. For example, (3√5)(2√10) = 6√50 = 6√(25 × 2) = 30√2. Check that the final radical is simplified.' },
+        { heading: 'Combine only like radicals', content: 'Radicals can be combined like like-terms after they are simplified. For example, 2√3 + 5√3 = 7√3, but √2 and √3 are unlike terms and cannot be combined. Simplify first: √12 + √27 = 2√3 + 3√3 = 5√3.' },
+        { heading: 'Exact values and estimates', content: 'Keep a simplified radical as an exact answer when possible. To estimate √20, note that 16 < 20 < 25, so 4 < √20 < 5; a calculator gives approximately 4.47. An estimate is useful for context, but it does not replace the exact value unless the question asks for a decimal.' }
+      ],
+      diagram: {
+        title: 'Factor out the largest perfect square',
+        caption: 'The factor tree makes the simplification visible: 72 is split into 36 × 2, and only the perfect-square factor 36 leaves the radical.',
+        viewBox: '0 0 620 260',
+        svg: `<rect class="diagram-highlight-fill" x="34" y="92" width="132" height="66" rx="12"/>
+          <text class="diagram-label" x="100" y="132" text-anchor="middle" font-size="22">√72</text>
+          <path class="diagram-outline" d="M166 125 H228 M228 125 L270 72 M228 125 L270 178"/>
+          <rect class="diagram-outline" x="270" y="36" width="134" height="66" rx="12"/>
+          <text class="diagram-label" x="337" y="77" text-anchor="middle" font-size="20">√36 · √2</text>
+          <rect class="diagram-outline" x="270" y="146" width="134" height="66" rx="12"/>
+          <text class="diagram-label" x="337" y="187" text-anchor="middle" font-size="20">36 × 2</text>
+          <path class="diagram-outline" d="M404 69 H458"/>
+          <path class="diagram-outline" d="M448 59 L458 69 L448 79"/>
+          <rect class="diagram-highlight-fill" x="458" y="36" width="132" height="66" rx="12"/>
+          <text class="diagram-label" x="524" y="77" text-anchor="middle" font-size="22">6√2</text>
+          <text class="diagram-label diagram-muted" x="524" y="138" text-anchor="middle" font-size="14">√36 = 6</text>
+          <text class="diagram-label diagram-muted" x="524" y="164" text-anchor="middle" font-size="14">√2 stays inside</text>`
+      },
+      examples: [
+        { prompt: 'Simplify √72.', steps: ['Find the largest perfect-square factor: 72 = 36 × 2.', 'Separate the factors under the radical: √72 = √36 × √2.', 'Evaluate the perfect-square root: √36 = 6.', 'The remaining factor 2 has no square factor greater than 1.'], answer: '√72 = 6√2.' },
+        { prompt: 'Simplify √12 + √27.', steps: ['Simplify each radical: √12 = √(4 × 3) = 2√3.', 'Simplify the second: √27 = √(9 × 3) = 3√3.', 'The radicands now match, so add the coefficients: 2√3 + 3√3 = 5√3.'], answer: '√12 + √27 = 5√3.' },
+        { prompt: 'Simplify (3√5)(2√10).', steps: ['Multiply the coefficients: 3 × 2 = 6.', 'Multiply the radicals: √5 × √10 = √50.', 'Factor out the perfect square: √50 = 5√2.', 'Multiply the remaining factors: 6 × 5√2 = 30√2.'], answer: '(3√5)(2√10) = 30√2.' },
+        { prompt: 'A square has area 50 cm². Find its exact side length and an estimate to the nearest tenth.', steps: ['For a square, side² = area, so side = √50 cm.', 'Factor 50 = 25 × 2, giving √50 = 5√2 cm.', 'Since √2 ≈ 1.414, 5√2 ≈ 7.07 cm.', 'A side length is positive, so use the positive root.'], answer: 'Exact: 5√2 cm. Approximate: 7.1 cm.' }
+      ],
+      questions: [
+        { prompt: 'Which expression is equivalent to √12 + √27?', options: ['5√3', '√39', '5√6', '3√9'], correct: 0, explanation: 'Simplify first: √12 = 2√3 and √27 = 3√3. Add the coefficients to get 5√3.' },
+        { prompt: 'Which statement about √(9 + 16) is correct?', options: ['It equals √9 + √16.', 'It equals 5.', 'It equals 25.', 'It has no real value.'], correct: 1, explanation: 'Evaluate inside the radical first: √(9 + 16) = √25 = 5. Square roots do not distribute over addition.' },
+        { prompt: 'Simplify (3√5)(2√10).', options: ['30√2', '6√15', '30√50', '5√30'], correct: 0, explanation: 'Multiply coefficients and radicands: 6√50 = 6 × 5√2 = 30√2.' }
+      ],
+      mistakes: ['Treating √49 as ±7; the radical symbol gives the principal, non-negative root.', 'Splitting a sum under a radical: √(a + b) is generally not √a + √b.', 'Combining unlike radicals before simplifying, or combining them when their radicands remain different.', 'Keeping a perfect-square factor inside a radical instead of taking its root.'],
+      cheatSheet: ['√(ab) = √a · √b for a, b ≥ 0', '√72 = √(36 · 2) = 6√2', '(3√5)(2√10) = 30√2', '2√3 + 5√3 = 7√3', '√(a + b) ≠ √a + √b in general']
+    },
     {
       unit: 'Number & Operations', title: 'Reading and Evaluating Powers',
       idea: 'A power is a compact way to write repeated multiplication. In 4³, the base 4 is used as a factor three times: 4 × 4 × 4. The exponent counts factors; it does not mean multiply the base by the exponent.',
@@ -729,6 +850,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Right Triangles and the Pythagorean Theorem',
+      diagram: rightTriangleDiagram({ title: 'Pythagorean side lengths', caption: 'The marked right angle identifies the hypotenuse. The leg lengths 6 and 8 give 6² + 8² = 10².', theta: '36.9°', opposite: '6', adjacent: '8', hypotenuse: '10', callout: '6² + 8² = 10²', highlight: 'all' }),
       idea: 'A right triangle contains a 90° angle. The side opposite it is the hypotenuse; the two shorter sides are legs. The squares of the legs add to the square of the hypotenuse.',
       method: 'Identify the hypotenuse first. Substitute the two known side lengths into a² + b² = c², solve, and use a positive length.',
       example: 'A right triangle has legs 6 cm and 8 cm. Find the hypotenuse.',
@@ -745,11 +867,12 @@
     },
     {
       unit: 'Trigonometry', title: 'Naming the Sides Relative to an Angle',
+      diagram: rightTriangleDiagram({ title: 'Sides relative to θ', caption: 'With θ at the lower-right vertex, the vertical leg is opposite, the bottom leg is adjacent, and the sloped side opposite 90° is the hypotenuse.', theta: 'θ', opposite: 'BC', adjacent: 'AC', hypotenuse: 'AB', callout: '90° fixes H', highlight: 'opposite' }),
       idea: 'In trigonometry, opposite and adjacent depend on which acute angle is chosen. The hypotenuse does not change: it is always opposite the right angle.',
       method: 'Circle the reference angle. Find the side directly across from it (opposite), touch it that is not the hypotenuse (adjacent), and identify the hypotenuse.',
-      example: 'A right triangle has vertices with a 90° angle at C and reference angle A. Name sides relative to angle A.',
-      steps: ['The side across from 90° is AB, so AB is the hypotenuse.', 'The side directly across from angle A is BC, so BC is opposite.', 'The remaining leg AC touches angle A, so AC is adjacent.'],
-      result: 'Relative to A: opposite = BC, adjacent = AC, hypotenuse = AB.',
+      example: 'A right triangle has a 90° angle at A and reference angle C. Name the sides relative to angle C.',
+      steps: ['The side across from 90° is BC, so BC is the hypotenuse.', 'The side directly across from angle C is AB, so AB is opposite.', 'The remaining leg AC touches angle C, so AC is adjacent.'],
+      result: 'Relative to C: opposite = AB, adjacent = AC, hypotenuse = BC.',
       question: 'Which side is the hypotenuse?', options: ['The shortest side', 'The side opposite the right angle', 'The side adjacent to the chosen acute angle only', 'Any leg'], correct: 'The side opposite the right angle',
       reason: 'The hypotenuse is defined by the right angle, not by the selected reference angle.',
       numericQuestion: 'A triangle has angles 90°, 30°, and 60°. How many hypotenuses does it have?', numericAnswer: 1,
@@ -761,6 +884,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Sine, Cosine, and Tangent Ratios',
+      diagram: rightTriangleDiagram({ title: 'Three side ratios for θ', caption: 'Use the same reference angle to name each side. Each ratio compares a specific pair of sides.', theta: 'θ', opposite: '3', adjacent: '4', hypotenuse: '5', callout: 'SOH · CAH · TOA', highlight: 'all' }),
       idea: 'For a fixed acute angle in a right triangle, ratios of side lengths stay consistent. Sine compares opposite to hypotenuse, cosine adjacent to hypotenuse, and tangent opposite to adjacent.',
       method: 'Mark the reference angle, label opposite/adjacent/hypotenuse, choose the ratio containing the known and unknown sides, then substitute.',
       example: 'For an angle θ, opposite = 3 and hypotenuse = 5. Find sin θ.',
@@ -777,6 +901,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Choosing a Trigonometric Ratio',
+      diagram: rightTriangleDiagram({ title: 'Choose by the known sides', caption: 'The given 7 and unknown x are opposite and adjacent to θ, so tangent is the ratio that connects them.', theta: 'θ', opposite: '7 (given)', adjacent: 'x (unknown)', hypotenuse: 'not used', callout: 'tan θ = 7/x', highlight: 'adjacent' }),
       idea: 'The best ratio is the one containing the known side and the side you need. Comparing the side labels before writing an equation prevents choosing the wrong trigonometric function.',
       method: 'Mark the angle, label the given and unknown sides, then use SOH CAH TOA to select sine, cosine, or tangent.',
       example: 'Relative to θ, the opposite side is 7 and the adjacent side is x. Write an equation for x.',
@@ -793,6 +918,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Finding a Missing Side with Sine',
+      diagram: rightTriangleDiagram({ title: 'Find the opposite side with sine', caption: 'For θ = 30° and hypotenuse 12 cm, the opposite side is 12 sin 30° = 6 cm.', theta: '30°', opposite: '6 cm', adjacent: '10.4 cm', hypotenuse: '12 cm', callout: 'sin 30° = 6/12', highlight: 'opposite' }),
       idea: 'Sine relates an acute angle to the ratio of opposite side and hypotenuse. If the angle and hypotenuse are known, multiply the hypotenuse by the sine to find the opposite side.',
       method: 'Identify opposite and hypotenuse, write sin θ = opposite/hypotenuse, substitute, and solve. Make sure the calculator is in degree mode when angles are in degrees.',
       example: 'A right triangle has θ = 30° and hypotenuse 12 cm. Find the opposite side.',
@@ -809,6 +935,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Finding a Missing Side with Cosine',
+      diagram: rightTriangleDiagram({ title: 'Find the adjacent side with cosine', caption: 'For θ = 60° and hypotenuse 12 cm, the adjacent side is 12 cos 60° = 6 cm.', theta: '60°', opposite: '10.4 cm', adjacent: '6 cm', hypotenuse: '12 cm', callout: 'cos 60° = 6/12', highlight: 'adjacent' }),
       idea: 'Cosine relates adjacent side to hypotenuse. When the angle and hypotenuse are known, multiply the hypotenuse by cosine to find the adjacent side.',
       method: 'Label adjacent and hypotenuse from the reference angle, write cos θ = adjacent/hypotenuse, and solve for the unknown side.',
       example: 'A right triangle has θ = 60° and hypotenuse 14 cm. Find the adjacent side to the nearest tenth.',
@@ -825,6 +952,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Finding a Missing Side with Tangent',
+      diagram: rightTriangleDiagram({ title: 'Find a leg with tangent', caption: 'At θ = 45°, opposite and adjacent legs are equal. Given an opposite side of 7 cm, the adjacent side is 7 ÷ tan 45° = 7 cm.', theta: '45°', opposite: '7 cm', adjacent: '7 cm', hypotenuse: '9.9 cm', callout: 'tan 45° = 7/7', highlight: 'adjacent' }),
       idea: 'Tangent compares the opposite and adjacent legs, so it is useful when the hypotenuse is not involved. Solving the ratio equation gives a missing leg.',
       method: 'Label opposite and adjacent, use tan θ = opposite/adjacent, then multiply or divide according to which leg is unknown.',
       example: 'A right triangle has θ = 45° and adjacent side 9 m. Find the opposite side.',
@@ -857,6 +985,7 @@
     },
     {
       unit: 'Trigonometry', title: 'Solving Right Triangles with Multiple Methods',
+      diagram: rightTriangleDiagram({ title: 'One triangle, three checks', caption: 'For a 5–12–13 right triangle, verify its sides with the Pythagorean theorem and compare the angle ratios using θ at the lower-right vertex.', theta: '22.6°', opposite: '5', adjacent: '12', hypotenuse: '13', callout: '5²+12²=13²', highlight: 'hypotenuse' }),
       idea: 'A missing side can sometimes be found with the Pythagorean theorem or a trigonometric ratio. Choosing the method that uses the known information most directly reduces unnecessary steps.',
       method: 'If two sides are known, consider the Pythagorean theorem. If an acute angle and one side are known, choose SOH CAH TOA. Check that the result is positive and reasonable.',
       example: 'A right triangle has hypotenuse 13 and one leg 5. Find the other leg.',
@@ -908,18 +1037,19 @@
       published: true,
       source: { name: 'StudyBC original lesson', curriculum: curriculumUrl },
       time: '20 min',
-      goals: [
+      diagram: spec.diagram,
+      goals: spec.goals || [
         `Explain ${spec.terms[0][0].toLowerCase()} using the lesson vocabulary.`,
         `Apply the method to solve a new ${spec.unit.toLowerCase()} problem.`,
         'Check the result and explain why it makes sense.'
       ],
       vocabulary: spec.terms.map(([term, definition]) => ({ term, definition })),
-      sections: [
+      sections: spec.sections || [
         { heading: 'Start with the idea', content: spec.idea },
         { heading: 'A reliable method', content: spec.method }
       ],
-      examples: [{ prompt: spec.example, steps: spec.steps, answer: spec.result }],
-      mistakes: [spec.mistake],
+      examples: spec.examples || [{ prompt: spec.example, steps: spec.steps, answer: spec.result }],
+      mistakes: spec.mistakes || [spec.mistake],
       interactive: { type: 'reflection', label: 'Explain the method in your own words, then try the checkpoints.' },
       practice: [
         {
@@ -930,6 +1060,14 @@
           answer: spec.correct,
           explanation: spec.reason
         },
+        ...(spec.questions || []).map((question, questionIndex) => ({
+          id: `fm10-${lessonNumber}-mcq-${questionIndex + 2}`,
+          type: 'multiple-choice',
+          question: question.prompt,
+          options: question.options,
+          answer: question.options[question.correct],
+          explanation: question.explanation
+        })),
         {
           id: `fm10-${lessonNumber}-numeric`,
           type: 'numeric',
@@ -940,13 +1078,61 @@
         }
       ],
       summary: spec.summary,
-      cheatSheet: [spec.formula, `Check: ${spec.mistake}`]
+      cheatSheet: spec.cheatSheet || [spec.formula, `Check: ${spec.mistake}`]
     };
   });
 
   const duplicateTitles = new Set(course.lessons.map(lesson => lesson.title.toLowerCase()));
-  const uniqueAdditions = additions.filter(lesson => !duplicateTitles.has(lesson.title.toLowerCase()));
+  const uniqueAdditions = [];
+  let upgradedMappedTopics = 0;
+  additions.forEach(lesson => {
+    const mappedIndex = course.lessons.findIndex(existing =>
+      existing.published === false &&
+      existing.unit === lesson.unit &&
+      existing.title.toLowerCase() === lesson.title.toLowerCase()
+    );
+    if (mappedIndex >= 0) {
+      course.lessons[mappedIndex] = { ...lesson, id: course.lessons[mappedIndex].id };
+      upgradedMappedTopics += 1;
+    } else if (!duplicateTitles.has(lesson.title.toLowerCase())) {
+      uniqueAdditions.push(lesson);
+      duplicateTitles.add(lesson.title.toLowerCase());
+    }
+  });
   course.lessons.push(...uniqueAdditions);
+  specs.filter(lesson => lesson.diagram).forEach(lesson => {
+    const existing = course.lessons.find(item =>
+      item.unit === lesson.unit &&
+      item.title.toLowerCase() === lesson.title.toLowerCase()
+    );
+    if (existing) existing.diagram = lesson.diagram;
+  });
+  const rightTriangleOverview = course.lessons.find(lesson => lesson.id === 'right-triangle-trig');
+  if (rightTriangleOverview) {
+    rightTriangleOverview.diagram = rightTriangleDiagram({
+      title: 'Right-triangle ratios from a reference angle',
+      caption: 'Choose θ first. The right-angle marker fixes the hypotenuse; the two other sides are opposite and adjacent relative to θ.',
+      theta: '30°',
+      opposite: '6',
+      adjacent: '10.4',
+      hypotenuse: '12',
+      callout: 'sin θ = O/H',
+      highlight: 'opposite'
+    });
+  }
+  const inverseTrig = course.lessons.find(lesson => /inverse trigonometry/i.test(lesson.title));
+  if (inverseTrig) {
+    inverseTrig.diagram = rightTriangleDiagram({
+      title: 'Find an angle from a side ratio',
+      caption: 'When opposite and hypotenuse are known, sine gives the ratio and inverse sine returns the acute reference angle.',
+      theta: '?',
+      opposite: '5',
+      adjacent: '8.66',
+      hypotenuse: '10',
+      callout: 'θ = sin⁻¹(5/10)',
+      highlight: 'opposite'
+    });
+  }
   course.units = [...new Set([...course.units.map(unit => unit.name), ...uniqueAdditions.map(lesson => lesson.unit)])]
     .map(name => {
       const current = course.units.find(unit => unit.name === name);
@@ -966,5 +1152,5 @@
   ].filter(([name]) => !course.learningStandards.some(standard => standard.name === name))
     .map(([name, elaboration]) => ({ name, elaboration }))];
   course.status = 'In progress';
-  console.info(`Added ${uniqueAdditions.length} published BC Mathematics 10 lessons to ${course.title}.`);
+  console.info(`Published ${uniqueAdditions.length + upgradedMappedTopics} BC Mathematics 10 lessons, including ${upgradedMappedTopics} mapped topics upgraded to full lessons.`);
 })();

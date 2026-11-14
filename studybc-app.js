@@ -20,6 +20,7 @@
     view: 'home',
     courseId: 'fm10',
     lessonId: 'linear-relations',
+    lessonTab: 'core',
     grade: 'All',
     subject: 'All',
     search: '',
@@ -42,6 +43,7 @@
   };
   let installPrompt = null;
   let focusInterval = null;
+  let mathJaxRenderQueue = Promise.resolve();
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -403,31 +405,13 @@
     return `${lesson.id}|${questionIdValue}`;
   }
 
-  function renderDiagram(course, lesson) {
-    const topic = `${course.area} ${lesson.unit} ${lesson.title}`.toLowerCase();
-    let title = 'A visual way to organize the idea';
-    let caption = 'Connect what you already know to the new idea, then use evidence or examples to test the connection.';
-    let graphic = `<circle cx="90" cy="68" r="32" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><circle cx="174" cy="68" r="32" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/><circle cx="132" cy="124" r="32" fill="#fef3c7" stroke="#d97706" stroke-width="3"/><path d="M114 74l18 37m24-37l-18 37m-16-43h22" stroke="#64748b" stroke-width="3" stroke-dasharray="5 5"/><text x="90" y="72" text-anchor="middle" fill="#172033" font-size="12">idea</text><text x="174" y="72" text-anchor="middle" fill="#172033" font-size="12">evidence</text><text x="132" y="128" text-anchor="middle" fill="#172033" font-size="12">meaning</text>`;
-
-    if (/math|calculus|statistics/.test(course.area.toLowerCase()) || /slope|linear|function|graph|rate|equation|calculus|statistic|probability/.test(topic)) {
-      title = 'Relationships on a coordinate plane';
-      caption = 'A graph shows how two quantities change together. Read the axes and units before interpreting the pattern.';
-      graphic = `<path d="M42 130H220M60 145V24" stroke="#475569" stroke-width="2"/><path d="M72 119L194 42" stroke="#2563eb" stroke-width="4"/><circle cx="72" cy="119" r="5" fill="#0f9d7f"/><circle cx="194" cy="42" r="5" fill="#0f9d7f"/><path d="M72 119V42H194" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 5"/><text x="131" y="156" text-anchor="middle" fill="#475569" font-size="12">input</text><text x="24" y="28" fill="#475569" font-size="12">output</text><text x="132" y="74" fill="#1d4ed8" font-size="12">change / rate</text>`;
-    } else if (/chem|atom|mole|bond|reaction|matter/.test(topic)) {
-      title = 'A simple particle model';
-      caption = 'Models simplify reality to help us reason. In chemistry, keep track of which particles and quantities the model represents.';
-      graphic = `<circle cx="132" cy="82" r="10" fill="#f59e0b"/><ellipse cx="132" cy="82" rx="82" ry="28" fill="none" stroke="#2563eb" stroke-width="3" transform="rotate(-28 132 82)"/><ellipse cx="132" cy="82" rx="82" ry="28" fill="none" stroke="#16a34a" stroke-width="3" transform="rotate(28 132 82)"/><circle cx="71" cy="53" r="6" fill="#7c3aed"/><circle cx="199" cy="110" r="6" fill="#7c3aed"/><text x="132" y="86" text-anchor="middle" fill="white" font-size="9">core</text><text x="132" y="145" text-anchor="middle" fill="#475569" font-size="12">model: not to scale</text>`;
-    } else if (/physics|force|motion|energy|wave|electric|momentum/.test(topic)) {
-      title = 'Representing change with a model';
-      caption = 'Draw the system first, label the quantities and directions, then connect the model to a rule or equation.';
-      graphic = `<rect x="94" y="76" width="70" height="48" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><path d="M129 75V30m0 0l-9 13m9-13l9 13M164 99h48m0 0l-13-9m13 9l-13 9M94 99H50m0 0l13-9m-13 9l13 9" fill="none" stroke="#e11d48" stroke-width="3"/><text x="129" y="104" text-anchor="middle" fill="#172033" font-size="12">system</text><text x="129" y="158" text-anchor="middle" fill="#475569" font-size="12">label direction and units</text>`;
-    } else if (/computer|program|web development|technology/.test(topic)) {
-      title = 'A process from input to outcome';
-      caption = 'Break complex tasks into steps: identify the input, describe each transformation, then test the output.';
-      graphic = `<rect x="25" y="62" width="55" height="38" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><rect x="105" y="62" width="65" height="38" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/><rect x="195" y="62" width="55" height="38" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><path d="M80 81h23m-6-7l7 7-7 7m63-7h25m-6-7l7 7-7 7" fill="none" stroke="#475569" stroke-width="2"/><text x="52" y="85" text-anchor="middle" fill="#172033" font-size="11">input</text><text x="137" y="85" text-anchor="middle" fill="#172033" font-size="11">steps</text><text x="222" y="85" text-anchor="middle" fill="#172033" font-size="11">output</text>`;
+  function renderDiagram(lesson) {
+    const diagram = lesson.diagram;
+    if (!diagram?.svg) {
+      return `<section class="info-box diagram-progress" aria-live="polite"><span class="eyebrow">Custom visual in progress</span><h2>${escapeHtml(lesson.title)}</h2><p>A topic-specific annotated diagram has not been authored for this lesson yet. StudyBC will not substitute a generic graphic.</p></section>`;
     }
-
-    return `<figure class="lesson-diagram info-box"><span class="eyebrow">Visual guide</span><h2>${escapeHtml(title)}</h2><svg viewBox="0 0 270 170" role="img" aria-label="${escapeHtml(title)}">${graphic}</svg><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+    const diagramId = `diagram-${escapeHtml(lesson.id)}`;
+    return `<figure class="lesson-diagram info-box"><span class="eyebrow">Topic-specific visual</span><h2 id="${diagramId}-title">${escapeHtml(diagram.title)}</h2><svg viewBox="${escapeHtml(diagram.viewBox || '0 0 620 280')}" role="img" aria-labelledby="${diagramId}-title ${diagramId}-description">${diagram.svg}</svg><figcaption id="${diagramId}-description">${escapeHtml(diagram.caption)}</figcaption></figure>`;
   }
 
   function renderProgressPage() {
@@ -450,13 +434,11 @@
       attempts: recentAttempts.filter(attempt => courseById(attempt.courseId).grade === grade)
     })).filter(group => group.attempts.length);
     return `<div class="page-shell tool-page">
-      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your learning dashboard</span><h1>Progress tracker</h1><p>Organized by grade. Authored lesson mastery, curriculum study-guide exploration, and quiz scores are tracked separately on this device.</p></div><div class="course-progress-card"><strong>${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%</strong><span>${totals.completed} of ${totals.total} authored lessons complete</span><div class="progress-track"><span style="width:${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%"></span></div><small>${totals.explored}/${totals.mapped} mapped study guides explored</small></div></header>
+      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your learning dashboard</span><h1>Progress tracker</h1><p>Organized by grade. Mastered lessons, curriculum topics that still need full lessons, and quiz scores are tracked separately on this device.</p></div><div class="course-progress-card"><strong>${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%</strong><span>${totals.completed} of ${totals.total} authored lessons complete</span><div class="progress-track"><span style="width:${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%"></span></div><small>${totals.mapped} curriculum topics still need full lessons</small></div></header>
       <section class="info-box"><span class="eyebrow">Courses by grade</span><h2>Learning progress</h2>${groupedCourses.map(group => `<section class="grade-progress-group"><h3>${group.grade === 'AP' ? 'Advanced Placement' : `Grade ${group.grade}`}</h3><div class="tracker-list">${group.courses.map(course => {
         const stats = courseProgress(course);
-        const measureTotal = stats.total || stats.mapped;
-        const measureDone = stats.total ? stats.completed : stats.explored;
-        const percent = measureTotal ? Math.round(measureDone / measureTotal * 100) : 0;
-        return `<article class="tracker-row"><div><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.area)} · ${stats.total ? `${stats.completed}/${stats.total} authored lessons` : `${stats.explored}/${stats.mapped} curriculum study guides explored`}${isInMyList(course.id) ? ' · In My list' : ''}</small></div><strong>${percent}%</strong><div class="progress-track"><span style="width:${percent}%"></span></div></article>`;
+        const percent = stats.percent;
+        return `<article class="tracker-row"><div><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.area)} · ${stats.total ? `${stats.completed}/${stats.total} authored lessons` : `${stats.mapped} topics need authored lessons`}${isInMyList(course.id) ? ' · In My list' : ''}</small></div><strong>${stats.total ? `${percent}%` : 'Not started'}</strong><div class="progress-track"><span style="width:${percent}%"></span></div></article>`;
       }).join('')}</div></section>`).join('')}</section>
       <section class="info-box"><span class="eyebrow">Quiz and test results</span><h2>Scores by grade</h2>${recentAttempts.length ? attemptsByGrade.map(group => `<section class="grade-progress-group"><h3>${group.grade === 'AP' ? 'Advanced Placement' : `Grade ${group.grade}`}</h3><div class="tracker-list">${group.attempts.map(attempt => `<article class="tracker-row score-row"><div><strong>${escapeHtml(attempt.courseTitle)} · ${escapeHtml(attempt.label)}</strong><small>${escapeHtml(new Date(attempt.date).toLocaleString())} · ${attempt.correct}/${attempt.total} correct</small></div><strong>${attempt.percent}%</strong></article>`).join('')}</div></section>`).join('') : '<p>No scored assessments yet. Take a unit quiz or course test to see your results here.</p>'}</section>
     </div>`;
@@ -495,12 +477,12 @@
   function renderTutorPage() {
     const course = courseById(state.tutorCourseId);
     const unitName = state.tutorUnit || course.units[0]?.name || '';
-    const lessons = course.lessons.filter(lesson => lesson.unit === unitName);
+    const lessons = course.lessons.filter(lesson => lesson.unit === unitName && lesson.published !== false);
     return `<div class="page-shell tool-page">
-      <header class="course-header"><div class="course-header-main"><span class="eyebrow">AI study helper · offline guide</span><h1>Break down a unit</h1><p>Choose a course and unit, then describe what feels difficult. This local helper organizes StudyBC’s existing lesson material; it does not send your question to a hosted AI model.</p></div><div class="course-progress-card"><strong><i class="fa-solid fa-lightbulb"></i></strong><span>Study one idea at a time</span></div></header>
-      <form class="info-box tutor-form" id="tutor-form"><div class="assessment-controls"><label>Course<select id="tutor-course">${data.courses.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === course.id ? 'selected' : ''}>${escapeHtml(item.title)}</option>`).join('')}</select></label><label>Unit<select id="tutor-unit">${course.units.map(unit => `<option value="${escapeHtml(unit.name)}" ${unit.name === unitName ? 'selected' : ''}>${escapeHtml(unit.name)}</option>`).join('')}</select></label></div><label for="tutor-prompt">What would you like help breaking down?</label><textarea id="tutor-prompt" rows="3" placeholder="For example: I mix up the steps for solving a system of equations." required>${escapeHtml(state.tutorPrompt)}</textarea><button class="primary-button" type="submit">Build my study plan</button></form>
-      ${state.tutorBreakdown ? `<section class="info-box tutor-response" aria-live="polite"><span class="eyebrow">A step-by-step study plan</span><h2>${escapeHtml(state.tutorBreakdown.title)}</h2><ol>${state.tutorBreakdown.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>${state.tutorBreakdown.lessons.length ? `<h3>Relevant lessons and topic guides</h3><div class="lesson-list">${state.tutorBreakdown.lessons.map(lesson => `<button type="button" class="lesson-row" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.published === false ? 'Curriculum study guide' : `${escapeHtml(lesson.time)} · ${lesson.goals.length} learning goals`}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('')}</div>` : ''}<p class="content-note">${escapeHtml(state.tutorBreakdown.note)}</p></section>` : `<section class="info-box"><h2>How the helper works</h2><p>It uses the selected unit’s published goals, explanations, examples, and mapped topic names to suggest a study sequence. It does not invent an answer when course content is missing.</p><div class="diagram-callout"><strong>Try this structure</strong><span>Start with the vocabulary → follow one worked example → explain the idea in your own words → check one practice question.</span></div></section>`}
-      <section class="info-box"><span class="eyebrow">Selected unit</span><h2>${escapeHtml(unitName || 'No units available')}</h2><div class="unit-topic-chips">${lessons.map(lesson => `<span>${escapeHtml(lesson.title)}${lesson.published === false ? ' · study guide' : ''}</span>`).join('') || '<p>No topics are mapped for this unit yet.</p>'}</div></section>
+      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Offline lesson finder</span><h1>Find a lesson</h1><p>Search published lesson titles and teaching content in this course. This tool links to existing material; it does not generate lessons or study plans.</p></div><div class="course-progress-card"><strong><i class="fa-solid fa-book-open"></i></strong><span>Topic-specific instruction</span></div></header>
+      <form class="info-box tutor-form" id="tutor-form"><div class="assessment-controls"><label>Course<select id="tutor-course">${data.courses.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === course.id ? 'selected' : ''}>${escapeHtml(item.title)}</option>`).join('')}</select></label><label>Unit<select id="tutor-unit">${course.units.map(unit => `<option value="${escapeHtml(unit.name)}" ${unit.name === unitName ? 'selected' : ''}>${escapeHtml(unit.name)}</option>`).join('')}</select></label></div><label for="tutor-prompt">What topic or idea are you looking for?</label><textarea id="tutor-prompt" rows="3" placeholder="For example: solving a system of equations" required>${escapeHtml(state.tutorPrompt)}</textarea><button class="primary-button" type="submit">Find lessons</button></form>
+      ${state.tutorBreakdown ? `<section class="info-box tutor-response" aria-live="polite"><span class="eyebrow">Published lesson results</span><h2>${escapeHtml(state.tutorBreakdown.title)}</h2>${state.tutorBreakdown.lessons.length ? `<div class="lesson-list">${state.tutorBreakdown.lessons.map(lesson => `<button type="button" class="lesson-row" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${escapeHtml(lesson.time)} · explanations, examples, and practice</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('')}</div>` : ''}<p class="content-note">${escapeHtml(state.tutorBreakdown.note)}</p></section>` : `<section class="info-box"><h2>Search course instruction</h2><p>Results include only published lessons with actual teaching material. Curriculum outlines are not offered as substitutes for lessons.</p></section>`}
+      <section class="info-box"><span class="eyebrow">Published in this unit</span><h2>${escapeHtml(unitName || 'No units available')}</h2><div class="unit-topic-chips">${lessons.map(lesson => `<span>${escapeHtml(lesson.title)}</span>`).join('') || '<p>No full lessons have been published for this unit yet.</p>'}</div></section>
     </div>`;
   }
 
@@ -509,7 +491,7 @@
       <header class="hero-panel"><span class="eyebrow">About StudyBC</span><h1>Learning should feel possible, one clear step at a time.</h1><p class="hero-copy">StudyBC is an independent self-study space designed to make BC and AP course topics easier to explore, understand, and practice.</p></header>
       <section class="info-box"><span class="eyebrow">Why we’re here</span><h2>Our goal</h2><p>Help learners build confidence through approachable explanations, visible learning pathways, worked reasoning, and practice with useful feedback—without assuming everyone starts with the same background or pace.</p></section>
       <section class="info-box"><span class="eyebrow">What guides the project</span><h2>Values</h2><div class="value-grid"><article><strong>Clarity</strong><p>Start with plain-language foundations and make each step understandable.</p></article><article><strong>Curiosity</strong><p>Connect ideas to examples, questions, and real situations.</p></article><article><strong>Honesty</strong><p>Mark curriculum outlines separately from fully authored lessons, and show how scores are calculated.</p></article><article><strong>Access</strong><p>Support self-paced learning across devices, with progress stored locally in the learner’s browser.</p></article></div></section>
-      <section class="info-box"><span class="eyebrow">Curriculum coverage</span><h2>Topic access and lesson depth</h2><p>Every topic currently included in the supplied BC/AP map opens as a subject-specific study guide with a study sequence, recall checkpoint, visual, and optional video search. Topics marked as mapped guides are not the same as fully authored lessons with detailed notes and scored practice. Compare the map with the official curriculum and your school’s course materials.</p></section>
+      <section class="info-box"><span class="eyebrow">Curriculum coverage</span><h2>Topic access and lesson depth</h2><p>StudyBC separates full lessons with explanations, worked examples, and practice from curriculum topics whose lesson content is still being written. An outline is not presented as a lesson. Use the official BC curriculum to check course standards.</p></section>
     </div>`;
   }
 
@@ -635,6 +617,7 @@
     state.view = 'lesson';
     state.courseId = course.id;
     state.lessonId = lesson.id;
+    state.lessonTab = 'core';
     progress.lastViewed = { courseId: course.id, lessonId: lesson.id };
     saveProgress();
     state.search = '';
@@ -644,11 +627,9 @@
   }
 
   function lessonLink(course, lesson, extraClass = '') {
-    const complete = lesson.published === false
-      ? Boolean(progress.explored[lessonKey(course.id, lesson.id)])
-      : isLessonComplete(course, lesson);
+    const complete = lesson.published !== false && isLessonComplete(course, lesson);
     return `<button type="button" class="tree-link ${extraClass}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}">
-      <span>${escapeHtml(lesson.title)}</span><span class="tree-check" aria-label="${complete ? lesson.published === false ? 'Explored' : 'Completed' : 'Not yet explored'}">${complete ? '✓' : ''}</span>
+      <span>${escapeHtml(lesson.title)}</span><span class="tree-check" aria-label="${lesson.published === false ? 'Lesson content in progress' : complete ? 'Completed' : 'Not yet complete'}">${complete ? '✓' : ''}</span>
     </button>`;
   }
 
@@ -682,7 +663,7 @@
       <div class="sidebar-progress">
         <div class="progress-label"><span>Your progress</span><strong>${courseProgress(course).percent}%</strong></div>
         <div class="progress-track"><span style="width:${courseProgress(course).percent}%"></span></div>
-        <small>${courseProgress(course).completed} of ${courseProgress(course).total} authored lessons complete · ${courseProgress(course).explored} mapped study guides explored</small>
+        <small>${courseProgress(course).completed} of ${courseProgress(course).total} authored lessons complete · ${courseProgress(course).mapped} topics still need full lessons</small>
       </div>
     </aside>`;
   }
@@ -746,7 +727,7 @@
         <div><span class="eyebrow">Your learning</span><strong>${completedCount} <span>/ ${lessonCount}</span></strong><p>lessons completed across all courses</p></div>
         <div class="progress-track"><span style="width:${lessonCount ? Math.round(completedCount / lessonCount * 100) : 0}%"></span></div>
       </section>
-      <section class="topic-progress-strip"><span>${exploredCount} / ${mappedCount} curriculum topic guides explored</span><button class="secondary-button" type="button" data-view="progress">View organized progress</button></section>
+      <section class="topic-progress-strip"><span>${mappedCount} curriculum topics still need complete lessons</span><button class="secondary-button" type="button" data-view="progress">View organized progress</button></section>
 
       <section class="my-list-section">
         <div class="section-heading"><div><span class="eyebrow">Plan ahead</span><h2>My list</h2></div><span>${myCourses.length} saved</span></div>
@@ -756,14 +737,14 @@
 
       <section class="course-results">
         <div class="section-heading"><div><span class="eyebrow">Browse the library</span><h2>Courses</h2></div><span>${courses.length} ${courses.length === 1 ? 'course' : 'courses'}</span></div>
-        <p class="catalog-note">Every course and topic currently included in the supplied BC/AP map is available to open. Fully authored lessons include detailed notes and scored practice; mapped topics open as subject-specific study guides and are tracked separately. The official curriculum links are provided for checking the complete standards.</p>
+        <p class="catalog-note">Full lessons include explanations, worked examples, and practice. Curriculum outline entries are clearly identified until their lesson content is written. Official links let you check the complete standards.</p>
         ${courses.length ? `<div class="course-grid">${courses.map(course => {
           const stats = courseProgress(course);
           return `<article class="course-card">
             <div class="course-card-art" aria-hidden="true"><i class="fa-solid ${subjectIcon(course.area)}"></i><span>${escapeHtml(course.area)}</span></div>
-            <div class="card-topline"><span class="grade-chip">${course.grade === 'AP' ? 'AP' : `Grade ${escapeHtml(course.grade)}`}</span><span class="course-subject">${escapeHtml(course.area)}</span><span class="catalog-badge ${stats.total ? 'active' : 'mapped'}">${stats.total ? 'Lessons & topic guides' : 'Topic study guides'}</span></div>
+            <div class="card-topline"><span class="grade-chip">${course.grade === 'AP' ? 'AP' : `Grade ${escapeHtml(course.grade)}`}</span><span class="course-subject">${escapeHtml(course.area)}</span><span class="catalog-badge ${stats.total ? 'active' : 'mapped'}">${stats.total ? 'Lessons & curriculum map' : 'Curriculum outline'}</span></div>
             <h3>${escapeHtml(course.title)}</h3><p>${escapeHtml(course.summary)}</p>
-            <div class="course-card-progress"><div class="progress-label"><span>${stats.total ? `${stats.completed} of ${stats.total} authored lessons` : 'Curriculum study guides'}</span><strong>${stats.total ? `${stats.percent}%` : 'Open'}</strong></div><div class="progress-track"><span style="width:${stats.percent}%"></span></div>${stats.mapped ? `<small class="mapped-count">${stats.explored} of ${stats.mapped} curriculum study guides explored · all mapped topics open</small>` : ''}</div>
+            <div class="course-card-progress"><div class="progress-label"><span>${stats.total ? `${stats.completed} of ${stats.total} authored lessons` : 'Full lessons not yet authored'}</span><strong>${stats.total ? `${stats.percent}%` : 'Outline'}</strong></div><div class="progress-track"><span style="width:${stats.percent}%"></span></div>${stats.mapped ? `<small class="mapped-count">${stats.mapped} curriculum topics still need full lessons</small>` : ''}</div>
             <div class="card-actions"><button class="primary-button" type="button" data-open-course="${escapeHtml(course.id)}">Explore course</button>
               ${course.lessons[0] ? `<button class="secondary-button" type="button" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(course.lessons[0].id)}">Start a lesson</button>` : ''}
               <button class="secondary-button list-toggle ${isInMyList(course.id) ? 'saved' : ''}" type="button" data-toggle-my-list="${escapeHtml(course.id)}" aria-pressed="${isInMyList(course.id)}">${isInMyList(course.id) ? 'In My list' : '＋ My list'}</button>
@@ -778,7 +759,7 @@
     const stats = courseProgress(course);
     return `<div class="page-shell">
       <header class="course-header"><div class="course-header-main"><span class="eyebrow">${escapeHtml(course.grade === 'AP' ? 'AP' : `Grade ${course.grade}`)} · ${escapeHtml(course.area)} · ${escapeHtml(course.code)}</span><h1>${escapeHtml(course.title)}</h1><p>${escapeHtml(course.summary)}</p></div>
-        <div class="course-progress-card"><strong>${stats.total ? `${stats.percent}%` : `${stats.explored}/${stats.mapped}`}</strong><span>${stats.total ? `${stats.completed} of ${stats.total} authored lessons complete` : 'mapped study guides explored'}${stats.mapped ? ` · ${stats.explored}/${stats.mapped} mapped study guides explored` : ''}</span><div class="progress-track"><span style="width:${stats.percent}%"></span></div><button class="secondary-button list-toggle ${isInMyList(course.id) ? 'saved' : ''}" type="button" data-toggle-my-list="${escapeHtml(course.id)}" aria-pressed="${isInMyList(course.id)}">${isInMyList(course.id) ? '✓ In My list' : '＋ Add to My list'}</button></div>
+        <div class="course-progress-card"><strong>${stats.total ? `${stats.percent}%` : `${stats.mapped}`}</strong><span>${stats.total ? `${stats.completed} of ${stats.total} authored lessons complete` : 'topics need full lessons'}${stats.mapped ? ` · ${stats.mapped} curriculum topics still in outline form` : ''}</span><div class="progress-track"><span style="width:${stats.percent}%"></span></div><button class="secondary-button list-toggle ${isInMyList(course.id) ? 'saved' : ''}" type="button" data-toggle-my-list="${escapeHtml(course.id)}" aria-pressed="${isInMyList(course.id)}">${isInMyList(course.id) ? '✓ In My list' : '＋ Add to My list'}</button></div>
       </header>
       <div class="course-layout">
         <section class="summary-stack">
@@ -793,10 +774,10 @@
               const unitCompleted = unitPublished.filter(lesson => isLessonComplete(course, lesson)).length;
               const unitPercent = unitPublished.length ? Math.round(unitCompleted / unitPublished.length * 100) : 0;
               return `<section class="unit-card"><div class="unit-header"><h3><span class="unit-number">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(unit.name)}</h3><span>${unitLessons.length} topics</span></div><p>${escapeHtml(unit.summary)}</p>
-              ${unitPublished.length ? `<div class="unit-progress"><div class="progress-label"><span>${unitCompleted} of ${unitPublished.length} authored lessons complete</span><strong>${unitPercent}%</strong></div><div class="progress-track"><span style="width:${unitPercent}%"></span></div></div>` : `<small class="mapped-count">${unitLessons.filter(item => progress.explored[lessonKey(course.id, item.id)]).length} of ${unitLessons.length} curriculum topic study guides explored · all mapped topics open</small>`}
+              ${unitPublished.length ? `<div class="unit-progress"><div class="progress-label"><span>${unitCompleted} of ${unitPublished.length} authored lessons complete</span><strong>${unitPercent}%</strong></div><div class="progress-track"><span style="width:${unitPercent}%"></span></div></div>` : `<small class="mapped-count">${unitLessons.length} curriculum topics still need full lessons</small>`}
               ${groups.map(group => {
                 const groupLessons = unitLessons.filter(lesson => (group.lessonIds || []).includes(lesson.id) || (group.name && lesson.subunit === group.name));
-                return `<div class="subunit-block">${group.name ? `<h4>${escapeHtml(group.name)}</h4>` : ''}<div class="unit-lessons">${groupLessons.map(lesson => `<button type="button" class="overview-lesson ${lesson.published === false ? 'topic-guide-link' : ''}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.published === false ? `Open study guide${progress.explored[lessonKey(course.id, lesson.id)] ? ' · explored' : ''}` : `${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions`}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('') || '<p class="tree-empty">No topic guides mapped in this subunit.</p>'}</div></div>`;
+                return `<div class="subunit-block">${group.name ? `<h4>${escapeHtml(group.name)}</h4>` : ''}<div class="unit-lessons">${groupLessons.map(lesson => `<button type="button" class="overview-lesson ${lesson.published === false ? 'topic-guide-link' : ''}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.published === false ? 'Curriculum outline · lesson in progress' : `${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions`}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('') || '<p class="tree-empty">No curriculum topics mapped in this subunit.</p>'}</div></div>`;
               }).join('')}
               ${looseLessons.length ? `<div class="subunit-block"><h4>Additional lessons</h4><div class="unit-lessons">${looseLessons.map(lesson => `<button type="button" class="overview-lesson" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('')}</div></div>` : ''}
             </section>`;
@@ -855,36 +836,50 @@
   }
 
   function renderMappedTopic(course, lesson, unit) {
-    const key = lessonKey(course.id, lesson.id);
-    const explored = Boolean(progress.explored[key]);
     const standard = course.learningStandards.find(item => item.name === unit?.name);
     const scope = standard?.elaboration || unit?.summary || lesson.title;
-    const topics = scope.split(/[;•]/).map(item => item.trim()).filter(Boolean);
-    const unitLessons = course.lessons.filter(item => item.unit === lesson.unit);
+    const authoredLessons = course.lessons.filter(item => item.unit === lesson.unit && item.published !== false);
     const subunit = lesson.subunit || unit?.subunits?.find(group => group.lessonIds?.includes(lesson.id))?.name;
-    const plan = topicLearningPlan(course, lesson);
-    const note = progress.topicNotes[key] || '';
+    const activeTab = ['core', 'visual', 'examples', 'practice'].includes(state.lessonTab) ? state.lessonTab : 'core';
     return `<div class="page-shell lesson-page">
       <header class="lesson-heading">
-        <div class="lesson-topline"><span class="eyebrow">${escapeHtml(course.area)} · ${escapeHtml(course.grade === 'AP' ? 'AP' : `Grade ${course.grade}`)}</span><span class="lesson-time">Curriculum study guide</span></div>
+        <div class="lesson-topline"><span class="eyebrow">${escapeHtml(course.area)} · ${escapeHtml(course.grade === 'AP' ? 'AP' : `Grade ${course.grade}`)}</span><span class="lesson-time">Lesson content in progress</span></div>
         <h1>${escapeHtml(lesson.title)}</h1>
         <p class="lesson-meta-row"><span>${escapeHtml(course.title)}</span><span aria-hidden="true">/</span><span>${escapeHtml(unit?.name || lesson.unit)}</span>${subunit ? `<span aria-hidden="true">/</span><span>${escapeHtml(subunit)}</span>` : ''}</p>
-        <div class="outline-banner"><i class="fa-solid fa-book-open" aria-hidden="true"></i><div><strong>A study path for this curriculum topic</strong><p>This page turns the mapped topic into a structured way to study it. The curriculum map identifies scope; use your course notes, teacher materials, and the linked official curriculum for topic-specific facts and examples.</p></div></div>
-        <button class="secondary-button" type="button" data-toggle-explored="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}">${explored ? 'Mark topic not explored' : 'Mark topic explored'}</button>
       </header>
-      <div class="topic-guide-grid">
+      <div class="lesson-outline-grid">
         <main class="lesson-main-content">
-          <section class="info-box"><span class="eyebrow">Unit scope</span><h2>How this topic fits</h2><p>${escapeHtml(scope)}</p><ul class="topic-scope-list">${topics.map((topic, index) => `<li class="${topic.toLowerCase() === lesson.title.toLowerCase() ? 'current-topic' : ''}"><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(topic)}</li>`).join('')}</ul></section>
-          <section class="info-box"><span class="eyebrow">Start from the foundations</span><h2>What to learn and how</h2><p>${escapeHtml(plan.focus)}</p><ol class="topic-study-steps">${plan.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol></section>
-          ${renderDiagram(course, lesson)}
-          ${renderVideoReference(course, lesson)}
-          <section class="info-box topic-practice"><span class="eyebrow">Retrieval practice</span><h2>Check your understanding</h2><p>${escapeHtml(plan.checkpoint)}</p><label for="topic-note-${escapeHtml(key)}">Write your explanation or working notes</label><textarea id="topic-note-${escapeHtml(key)}" data-topic-note="${escapeHtml(key)}" rows="6" placeholder="Explain the idea, show your example, and note what you still want to check.">${escapeHtml(note)}</textarea><small>Your note is saved in this browser only. This open response is not a scored quiz.</small></section>
-          <section class="info-box"><span class="eyebrow">All topics in this unit</span><h2>Continue through the unit</h2><div class="unit-lessons">${unitLessons.map(item => `<button type="button" class="overview-lesson ${item.id === lesson.id ? 'current-outline-topic' : ''}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(item.id)}"><span><strong>${escapeHtml(item.title)}</strong><small>${progress.explored[lessonKey(course.id, item.id)] ? 'Explored' : 'Open study guide'}</small></span><i class="fa-solid ${item.id === lesson.id ? 'fa-book-open' : 'fa-arrow-right'}" aria-hidden="true"></i></button>`).join('')}</div></section>
-          <section class="info-box lesson-source-note"><span class="eyebrow">Official curriculum reference</span><p>This topic appears in StudyBC’s supplied map for ${escapeHtml(course.title)}. <a href="https://curriculum.gov.bc.ca/curriculum" target="_blank" rel="noopener noreferrer">Open the official British Columbia Curriculum</a> and select the course to compare the complete learning standards with this guide.</p></section>
+          ${renderLessonTabBar(activeTab)}
+          <section class="lesson-tab-panel info-box" id="lesson-panel-${escapeHtml(lesson.id)}-core" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-core" tabindex="0" data-lesson-panel="core" ${activeTab !== 'core' ? 'hidden' : ''}>
+            <span class="eyebrow">Curriculum scope · lesson in progress</span><h2>${escapeHtml(lesson.title)}</h2><p>${escapeHtml(scope)}</p>
+            <p>This entry is still a curriculum outline, not a finished lesson. The instructional content, examples, and practice are being authored.</p>
+            <p><a href="https://curriculum.gov.bc.ca/curriculum" target="_blank" rel="noopener noreferrer">Compare this topic with the official British Columbia Curriculum</a>.</p>
+            ${authoredLessons.length ? `<h3>Published lessons in this unit</h3><div class="unit-lessons">${authoredLessons.map(item => `<button type="button" class="overview-lesson" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(item.id)}"><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.time || 'Authored lesson')}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('')}</div>` : ''}
+          </section>
+          <section class="lesson-tab-panel" id="lesson-panel-${escapeHtml(lesson.id)}-visual" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-visual" tabindex="0" data-lesson-panel="visual" ${activeTab !== 'visual' ? 'hidden' : ''}>
+            ${renderDiagram(lesson)}
+          </section>
+          <section class="lesson-tab-panel info-box" id="lesson-panel-${escapeHtml(lesson.id)}-examples" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-examples" tabindex="0" data-lesson-panel="examples" ${activeTab !== 'examples' ? 'hidden' : ''}>
+            <span class="eyebrow">Worked examples · in progress</span><h2>No worked examples yet</h2><p>Examples will be written for this topic after the lesson explanation is ready.</p>
+          </section>
+          <section class="lesson-tab-panel info-box" id="lesson-panel-${escapeHtml(lesson.id)}-practice" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-practice" tabindex="0" data-lesson-panel="practice" ${activeTab !== 'practice' ? 'hidden' : ''}>
+            <span class="eyebrow">Practice checkpoint · in progress</span><h2>No practice questions yet</h2><p>Topic-specific questions and diagnostic feedback will be added with the lesson content.</p>
+          </section>
         </main>
-        <aside class="lesson-aside"><div class="info-box sticky-study-card"><span class="eyebrow">Topic progress</span><h2>${escapeHtml(unit?.name || lesson.unit)}</h2><strong class="aside-progress">${topicGuideProgress(course)}</strong><div class="progress-track"><span style="width:${courseProgress(course).mapped ? Math.round(courseProgress(course).explored / courseProgress(course).mapped * 100) : 0}%"></span></div><p class="aside-hint">Mark this topic explored after reviewing its scope, studying with course materials, and completing your recall notes. Exploration is tracked separately from authored lesson mastery.</p><button class="primary-button" type="button" data-open-course="${escapeHtml(course.id)}">Return to course map</button></div></aside>
       </div>
+      <button class="secondary-button" type="button" data-open-course="${escapeHtml(course.id)}">Return to course map</button>
     </div>`;
+  }
+
+  function renderLessonTabBar(activeTab) {
+    const tabs = [
+      ['core', 'Core Concept & Sub-Lessons'],
+      ['visual', 'Visual Guide & Annotated Diagrams'],
+      ['examples', 'Step-by-Step Worked Examples'],
+      ['practice', 'Interactive Practice Checkpoint']
+    ];
+    const lesson = currentLesson();
+    return `<div class="lesson-tabs" role="tablist" aria-label="Lesson sections">${tabs.map(([id, label]) => `<button type="button" class="lesson-tab ${activeTab === id ? 'active' : ''}" id="lesson-tab-${escapeHtml(lesson.id)}-${id}" role="tab" aria-controls="lesson-panel-${escapeHtml(lesson.id)}-${id}" aria-selected="${activeTab === id}" tabindex="${activeTab === id ? '0' : '-1'}" data-lesson-tab="${id}">${label}</button>`).join('')}</div>`;
   }
 
   function renderLesson(course) {
@@ -899,6 +894,7 @@
     const next = course.lessons[index + 1];
     const done = isLessonComplete(course, lesson);
     const completedQuestions = lesson.practice.filter((question, qIndex) => questionState(course, lesson, question, qIndex)?.correct).length;
+    const activeTab = ['core', 'visual', 'examples', 'practice'].includes(state.lessonTab) ? state.lessonTab : 'core';
 
     return `<div class="page-shell lesson-page">
       <header class="lesson-heading">
@@ -909,15 +905,25 @@
 
       <div class="lesson-content-grid">
         <main class="lesson-main-content">
-          <section class="goal-box"><span class="eyebrow">Learning goals</span><h2>By the end of this lesson</h2><ul>${lesson.goals.map(goal => `<li>${escapeHtml(goal)}</li>`).join('')}</ul></section>
-          <section class="info-box"><span class="eyebrow">Start from the beginning</span><h2>Key vocabulary</h2><div class="vocab-grid">${lesson.vocabulary.map(item => `<article class="vocab-card"><strong>${escapeHtml(item.term)}</strong><p>${escapeHtml(item.definition)}</p></article>`).join('')}</div></section>
-          ${renderDiagram(course, lesson)}
-          ${renderVideoReference(course, lesson)}
-          <section class="info-box lesson-notes"><span class="eyebrow">Concepts → method → application</span><h2>Learn the idea</h2>${lesson.sections.map((section, sectionIndex) => `<article class="section-block"><span class="section-index">0${sectionIndex + 1}</span><div><h3>${escapeHtml(section.heading)}</h3><p>${escapeHtml(section.content)}</p></div></article>`).join('')}</section>
-          <section class="info-box"><span class="eyebrow">Follow the reasoning</span><h2>Worked examples</h2>${lesson.examples.length ? lesson.examples.map((worked, exampleIndex) => `<article class="example-box"><span class="example-label">Example ${exampleIndex + 1}</span><h3>${escapeHtml(worked.prompt)}</h3><ol>${worked.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol><div class="answer-box"><strong>Result</strong><span>${escapeHtml(worked.answer)}</span></div></article>`).join('') : '<p class="content-note">The supplied lesson has no separate worked example. Use the guided activity and sample-response practice below to apply the ideas.</p>'}</section>
-          <section class="info-box practice-section"><div class="practice-heading"><div><span class="eyebrow">Check your understanding</span><h2>Practice checkpoint</h2></div><span class="question-count">${completedQuestions} / ${lesson.practice.length} mastered</span></div><p class="practice-intro">Answer multiple-choice questions or write a reflection before comparing it with a sample response. You can retry after reviewing.</p><div class="practice-list">${lesson.practice.map((question, qIndex) => renderQuestion(course, lesson, question, qIndex)).join('')}</div></section>
-          <section class="info-box"><span class="eyebrow">Review before moving on</span><h2>Key takeaways</h2><ul class="takeaway-list">${lesson.summary.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul><div class="cheat-sheet">${lesson.cheatSheet.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div></section>
-          ${lesson.source ? `<section class="info-box lesson-source-note"><span class="eyebrow">Lesson source</span><p>${escapeHtml(lesson.source.name)} · aligned to the <a href="${escapeHtml(lesson.source.curriculum)}" target="_blank" rel="noopener noreferrer">BC Mathematics 10 curriculum</a>. No commercial textbook or workbook is claimed as the source of this lesson.</p></section>` : ''}
+          ${renderLessonTabBar(activeTab)}
+          <section class="lesson-tab-panel" id="lesson-panel-${escapeHtml(lesson.id)}-core" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-core" tabindex="0" data-lesson-panel="core" ${activeTab !== 'core' ? 'hidden' : ''}>
+            <section class="goal-box"><span class="eyebrow">Learning goals</span><h2>By the end of this lesson</h2><ul>${lesson.goals.map(goal => `<li>${escapeHtml(goal)}</li>`).join('')}</ul></section>
+            <section class="info-box"><span class="eyebrow">Start from the beginning</span><h2>Key vocabulary</h2><div class="vocab-grid">${lesson.vocabulary.map(item => `<article class="vocab-card"><strong>${escapeHtml(item.term)}</strong><p>${escapeHtml(item.definition)}</p></article>`).join('')}</div></section>
+            ${renderVideoReference(course, lesson)}
+            <section class="info-box lesson-notes"><span class="eyebrow">Concepts → method → application</span><h2>Learn the idea</h2>${lesson.sections.map((section, sectionIndex) => `<article class="section-block"><span class="section-index">0${sectionIndex + 1}</span><div><h3>${escapeHtml(section.heading)}</h3><p>${escapeHtml(section.content)}</p></div></article>`).join('')}</section>
+            <section class="info-box"><span class="eyebrow">Review before moving on</span><h2>Key takeaways</h2><ul class="takeaway-list">${lesson.summary.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul><div class="cheat-sheet">${lesson.cheatSheet.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div></section>
+            ${lesson.source ? `<section class="info-box lesson-source-note"><span class="eyebrow">Lesson source</span><p>${escapeHtml(lesson.source.name)} · use the <a href="${escapeHtml(lesson.source.curriculum)}" target="_blank" rel="noopener noreferrer">official British Columbia Curriculum</a> to compare course standards. No commercial textbook or workbook is claimed as the source of this lesson.</p></section>` : ''}
+          </section>
+          <section class="lesson-tab-panel" id="lesson-panel-${escapeHtml(lesson.id)}-visual" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-visual" tabindex="0" data-lesson-panel="visual" ${activeTab !== 'visual' ? 'hidden' : ''}>
+            ${renderDiagram(lesson)}
+          </section>
+          <section class="lesson-tab-panel" id="lesson-panel-${escapeHtml(lesson.id)}-examples" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-examples" tabindex="0" data-lesson-panel="examples" ${activeTab !== 'examples' ? 'hidden' : ''}>
+            <section class="info-box"><span class="eyebrow">Follow the reasoning</span><h2>Worked examples</h2>${lesson.examples.length ? lesson.examples.map((worked, exampleIndex) => `<article class="example-box"><span class="example-label">Example ${exampleIndex + 1}</span><h3>${escapeHtml(worked.prompt)}</h3><ol>${worked.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol><div class="answer-box"><strong>Result</strong><span>${escapeHtml(worked.answer)}</span></div></article>`).join('') : '<p class="content-note">Worked examples for this topic are still being authored.</p>'}</section>
+            ${lesson.mistakes?.length ? `<section class="info-box"><span class="eyebrow">Avoid these errors</span><h2>Common mistakes</h2><ul>${lesson.mistakes.map(mistake => `<li>${escapeHtml(mistake)}</li>`).join('')}</ul></section>` : ''}
+          </section>
+          <section class="lesson-tab-panel" id="lesson-panel-${escapeHtml(lesson.id)}-practice" role="tabpanel" aria-labelledby="lesson-tab-${escapeHtml(lesson.id)}-practice" tabindex="0" data-lesson-panel="practice" ${activeTab !== 'practice' ? 'hidden' : ''}>
+            <section class="info-box practice-section"><div class="practice-heading"><div><span class="eyebrow">Check your understanding</span><h2>Practice checkpoint</h2></div><span class="question-count">${completedQuestions} / ${lesson.practice.length} mastered</span></div><p class="practice-intro">Multiple-choice answers get immediate feedback; numeric and short answers can be checked for an explanation. For open-ended reflections, compare your response with the sample and self-assess.</p><div class="practice-list">${lesson.practice.map((question, qIndex) => renderQuestion(course, lesson, question, qIndex)).join('')}</div></section>
+          </section>
           <nav class="lesson-actions" aria-label="Lesson navigation"><button class="secondary-button" type="button" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(previous?.id || lesson.id)}" ${previous ? '' : 'disabled'}><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Previous lesson</button><button class="primary-button" type="button" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(next?.id || lesson.id)}" ${next ? '' : 'disabled'}>${next ? 'Next lesson' : 'End of course'} ${next ? '<i class="fa-solid fa-arrow-right" aria-hidden="true"></i>' : ''}</button></nav>
         </main>
         <aside class="lesson-aside"><div class="info-box sticky-study-card"><span class="eyebrow">In this unit</span><h2>${escapeHtml(unit?.name || lesson.unit)}</h2><nav class="unit-lesson-nav">${course.lessons.filter(item => item.unit === lesson.unit).map(item => lessonLink(course, item, item.id === lesson.id ? 'selected' : '')).join('')}</nav><div class="aside-divider"></div><span class="eyebrow">Progress</span><strong class="aside-progress">${completedQuestions} / ${lesson.practice.length} questions</strong><div class="progress-track"><span style="width:${lesson.practice.length ? Math.round(completedQuestions / lesson.practice.length * 100) : 0}%"></span></div><p class="aside-hint">Answer correctly to save your checkpoint progress in this browser.</p></div></aside>
@@ -972,7 +978,7 @@
       ${showSidebar ? renderSidebar() : ''}
       <main class="main-panel">
         <header class="topbar">${renderBreadcrumbs()}<div class="topbar-actions">${searchBox('global-search', 'Search StudyBC', 'topbar-search')}<button class="theme-toggle secondary-button" type="button" data-toggle-theme aria-label="Switch to ${state.theme === 'dark' ? 'light' : 'dark'} mode" title="Toggle light and dark mode"><i class="fa-solid ${state.theme === 'dark' ? 'fa-sun' : 'fa-moon'}" aria-hidden="true"></i><span>${state.theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="secondary-button command-trigger" type="button" aria-label="Open search"><span class="search-shortcut">⌘K</span><span>Search</span></button></div></header>
-        <nav class="study-nav" aria-label="StudyBC pages">${[['home', 'Library', 'fa-house'], ['mylist', `My list (${progress.myList.length})`, 'fa-bookmark'], ['progress', 'Progress', 'fa-chart-simple'], ['quizzes', 'Quizzes & tests', 'fa-clipboard-check'], ['focus', 'Focus timer', 'fa-clock'], ['tutor', 'Study helper', 'fa-lightbulb'], ['sources', 'Sources', 'fa-book-open'], ['about', 'About', 'fa-circle-info'], ['feedback', 'Feedback', 'fa-comment-dots']].map(([view, label, icon]) => `<button type="button" class="${state.view === view ? 'active' : ''}" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ''}><i class="fa-solid ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}${appInstalled ? '<span class="installed-app-label"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> App installed</span>' : '<button type="button" class="install-app-button" data-install-app><i class="fa-solid fa-download" aria-hidden="true"></i> Install app</button>'}</nav>
+        <nav class="study-nav" aria-label="StudyBC pages">${[['home', 'Library', 'fa-house'], ['mylist', `My list (${progress.myList.length})`, 'fa-bookmark'], ['progress', 'Progress', 'fa-chart-simple'], ['quizzes', 'Quizzes & tests', 'fa-clipboard-check'], ['focus', 'Focus timer', 'fa-clock'], ['tutor', 'Lesson finder', 'fa-lightbulb'], ['sources', 'Sources', 'fa-book-open'], ['about', 'About', 'fa-circle-info'], ['feedback', 'Feedback', 'fa-comment-dots']].map(([view, label, icon]) => `<button type="button" class="${state.view === view ? 'active' : ''}" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ''}><i class="fa-solid ${icon}" aria-hidden="true"></i><span>${label}</span></button>`).join('')}${appInstalled ? '<span class="installed-app-label"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> App installed</span>' : '<button type="button" class="install-app-button" data-install-app><i class="fa-solid fa-download" aria-hidden="true"></i> Install app</button>'}</nav>
         ${state.notice ? `<div class="storage-notice" role="status"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>${escapeHtml(state.notice)}</div>` : ''}
         ${state.view !== 'home' && state.search && !state.commandOpen ? renderSearchResults(state.search) : ''}
         ${content}
@@ -982,7 +988,27 @@
     const activeSearchId = state.commandOpen ? 'command-search' : null;
     if (activeSearchId) document.getElementById(activeSearchId)?.focus();
     if (state.theme === 'dark') document.documentElement.classList.add('dark');
+    if (state.view === 'lesson') typesetLessonMath();
   }
+
+  function typesetLessonMath() {
+    const mathJax = window.MathJax;
+    if (!mathJax?.typesetPromise || (!root.textContent.includes('\\(') && !root.textContent.includes('\\['))) return;
+    mathJaxRenderQueue = mathJaxRenderQueue.then(() => {
+      mathJax.typesetClear?.([root]);
+      return mathJax.typesetPromise([root]);
+    }).catch(error => {
+      console.error('StudyBC could not render lesson mathematics with MathJax.', error);
+    });
+  }
+
+  const mathJaxScript = document.getElementById('mathjax-script');
+  mathJaxScript?.addEventListener('load', () => {
+    if (state.view === 'lesson') typesetLessonMath();
+  });
+  mathJaxScript?.addEventListener('error', () => {
+    console.error('StudyBC could not load MathJax; TeX lesson formulas may not render.');
+  });
 
   function normalizeAnswer(value) {
     return String(value ?? '').toLowerCase().trim().replace(/[−–]/g, '-').replace(/[\s,$]/g, '').replace(/[.!?]/g, '');
@@ -1096,32 +1122,20 @@
       const prompt = form.querySelector('#tutor-prompt').value.trim();
       state.tutorPrompt = prompt;
       const tokens = prompt.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length > 2);
-      const relatedLessons = course.lessons.filter(lesson => lesson.unit === unitName);
+      const relatedLessons = course.lessons.filter(lesson => lesson.unit === unitName && lesson.published !== false);
       const rankedLessons = relatedLessons.map(lesson => {
         const searchable = `${lesson.title} ${(lesson.goals || []).join(' ')} ${(lesson.summary || []).join(' ')} ${(lesson.sections || []).map(section => section.content).join(' ')}`.toLowerCase();
         return { lesson, score: tokens.reduce((score, token) => score + (searchable.includes(token) ? 1 : 0), 0) };
       }).sort((a, b) => b.score - a.score);
       const matched = rankedLessons.filter(item => item.score > 0).slice(0, 4).map(item => item.lesson);
-      const selectedLessons = matched.length ? matched : relatedLessons.slice(0, 4);
-      const authoredLessons = selectedLessons.filter(lesson => lesson.published !== false);
-      const standard = course.learningStandards.find(item => item.name === unitName);
-      const topicSummary = unit?.summary || standard?.elaboration || selectedLessons.map(lesson => lesson.title).join(', ');
-      const steps = [
-        `Restate the sticking point in one sentence: “${prompt}”`,
-        `Map the unit first: ${topicSummary}`,
-        authoredLessons.length
-          ? `Study ${authoredLessons.map(lesson => lesson.title).join('; ')} in order. For each, explain its learning goals before checking the notes.`
-          : 'Use the unit topic study guides alongside your course materials. The guides organize study and recall; consult your teacher or official curriculum for detailed explanations and examples.',
-        'Work through one example slowly: write what is known, choose the idea or rule that applies, and explain why each step follows.',
-        'Finish with retrieval practice: close the notes, summarize the idea from memory, then try a checkpoint question and review its explanation.'
-      ];
       state.tutorBreakdown = {
-        title: `Study plan for ${unitName}`,
-        steps,
-        lessons: selectedLessons,
-        note: authoredLessons.length
-          ? 'This plan is assembled from the selected course materials in your browser. It is not a generated answer from an online AI service.'
-          : 'This plan organizes the mapped topics into a study sequence. It is not a generated answer from an online AI service or a replacement for detailed course instruction.'
+        title: `Lessons matching “${prompt}”`,
+        lessons: matched,
+        note: matched.length
+          ? 'These results link to published, topic-specific course instruction.'
+          : relatedLessons.length
+            ? `No published lesson in ${unit?.name || unitName} matched that search. Browse the unit lessons below or try different keywords.`
+            : `No full lessons have been published for ${unit?.name || unitName} yet; its entries remain curriculum outlines.`
       };
       render();
     } else if (form.id === 'feedback-form') {
@@ -1143,6 +1157,12 @@
   root.addEventListener('click', event => {
     const target = event.target.closest('button');
     if (!target) return;
+    if (target.matches('[data-lesson-tab]')) {
+      state.lessonTab = target.dataset.lessonTab;
+      render();
+      root.querySelector(`[data-lesson-tab="${CSS.escape(state.lessonTab)}"]`)?.focus();
+      return;
+    }
     if (target.matches('[data-view]')) {
       state.view = target.dataset.view;
       state.search = '';
@@ -1391,6 +1411,22 @@
   });
 
   root.addEventListener('keydown', event => {
+    if (event.target.matches('[data-lesson-tab]')) {
+      const tabIds = ['core', 'visual', 'examples', 'practice'];
+      const currentIndex = tabIds.indexOf(event.target.dataset.lessonTab);
+      const nextIndex = event.key === 'ArrowRight' ? (currentIndex + 1) % tabIds.length
+        : event.key === 'ArrowLeft' ? (currentIndex - 1 + tabIds.length) % tabIds.length
+          : event.key === 'Home' ? 0
+            : event.key === 'End' ? tabIds.length - 1
+              : -1;
+      if (nextIndex >= 0) {
+        event.preventDefault();
+        state.lessonTab = tabIds[nextIndex];
+        render();
+        root.querySelector(`[data-lesson-tab="${CSS.escape(state.lessonTab)}"]`)?.focus();
+        return;
+      }
+    }
     if (event.target.matches('[data-answer-input]') && event.key === 'Enter') {
       event.preventDefault();
       const key = event.target.dataset.answerInput;

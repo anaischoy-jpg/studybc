@@ -2047,6 +2047,94 @@ body {
   gap: 22px;
 }
 
+.lesson-outline-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+
+.lesson-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.lesson-tab {
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.lesson-tab:hover,
+.lesson-tab.active {
+  border-color: var(--line);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.lesson-tab:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.lesson-tab-panel {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.lesson-tab-panel[hidden] {
+  display: none;
+}
+
+.diagram-progress {
+  border-style: dashed;
+}
+
+.lesson-diagram svg {
+  color: var(--ink);
+}
+
+.lesson-diagram svg text {
+  fill: currentColor;
+  font-family: inherit;
+}
+
+.lesson-diagram svg .diagram-line,
+.lesson-diagram svg .diagram-outline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lesson-diagram svg .diagram-muted {
+  opacity: 0.62;
+}
+
+.lesson-diagram svg .diagram-highlight {
+  stroke: var(--brand);
+  stroke-width: 5;
+}
+
+.lesson-diagram svg .diagram-highlight-fill {
+  fill: var(--brand-soft);
+  stroke: var(--brand-strong);
+  stroke-width: 2;
+}
+
 .lesson-main-content,
 .lesson-aside {
   display: grid;
@@ -2822,7 +2910,7 @@ button:disabled {
 
 .lesson-diagram svg {
   display: block;
-  width: min(100%, 360px);
+  width: min(100%, 620px);
   height: auto;
   margin: 0 auto;
   overflow: visible;
@@ -2905,6 +2993,16 @@ button:disabled {
 }
 
 @media (max-width: 620px) {
+  .lesson-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lesson-tab {
+    min-height: 44px;
+    padding: 9px 8px;
+    font-size: 0.77rem;
+  }
+
   .study-nav {
     gap: 5px;
     margin-bottom: 16px;
