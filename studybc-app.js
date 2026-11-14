@@ -41,6 +41,9 @@
     flashcardIndex: 0,
     flashcardRevealed: false,
     flashcardNotice: '',
+    flashcardDraftText: '',
+    flashcardDraftName: '',
+    flashcardBusy: false,
     feedbackDraft: null,
     preparedFeedback: null,
     installHelp: false,
@@ -238,7 +241,7 @@
     const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     if (/^(front|term|question)\s*[,|\t]/i.test(lines[0] || '')) lines.shift();
     return lines.slice(0, 200).map(line => {
-      const separator = line.includes('\t') ? '\t' : line.includes('|') ? '|' : ',';
+      const separator = ['\t', '|', '→', '—', ':', ','].find(value => line.includes(value)) || ',';
       const parts = [];
       let value = '';
       let quoted = false;
@@ -262,6 +265,72 @@
       const back = parts.join(separator).slice(0, 1500);
       return front && back ? { front, back } : null;
     }).filter(Boolean);
+  }
+
+  let pdfJsPromise;
+  async function extractPdfText(file) {
+    if (!window.pdfjsLib) {
+      pdfJsPromise ||= new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = () => resolve(window.pdfjsLib);
+        script.onerror = () => {
+          pdfJsPromise = null;
+          reject(new Error('PDF reader could not be loaded. Check your internet connection and try again.'));
+        };
+        document.head.append(script);
+      });
+      await pdfJsPromise;
+    }
+    const pdfjs = window.pdfjsLib;
+    if (!pdfjs?.getDocument) throw new Error('PDF reading is unavailable in this browser.');
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    if (pdf.numPages > 50) {
+      await pdf.destroy();
+      throw new Error('PDFs can contain up to 50 pages per import.');
+    }
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      let line = '';
+      const lines = [];
+      for (const item of content.items) {
+        if (!('str' in item)) continue;
+        line += `${item.str} `;
+        if (item.hasEOL) {
+          if (line.trim()) lines.push(line.trim());
+          line = '';
+        }
+      }
+      if (line.trim()) lines.push(line.trim());
+      pages.push(lines.join('\n'));
+      if (pages.join('\n').length > 500000) {
+        await pdf.destroy();
+        throw new Error('Extracted PDF text is too large. Import a shorter document.');
+      }
+    }
+    await pdf.destroy();
+    return pages.join('\n').trim();
+  }
+
+  function importFlashcards(cards) {
+    if (!cards.length) {
+      state.flashcardNotice = 'No question-and-answer pairs found. Use one pair per line, separated by a comma, tab, |, colon, arrow, or em dash.';
+      return false;
+    }
+    const importedCount = Math.min(cards.length, 500 - state.customFlashcards.length);
+    if (!importedCount) {
+      state.flashcardNotice = 'The local deck limit is 500 cards. Delete cards before importing more.';
+      return false;
+    }
+    state.customFlashcards = [...cards.slice(0, importedCount), ...state.customFlashcards];
+    state.flashcardIndex = 0;
+    state.flashcardRevealed = false;
+    state.flashcardNotice = `${importedCount} card${importedCount === 1 ? '' : 's'} imported${cards.length > importedCount ? ' (some were skipped to stay within the 500-card limit)' : ''}.`;
+    saveCustomFlashcards();
+    return true;
   }
 
   function saveAssessment(attempt) {
@@ -537,11 +606,12 @@
   function renderFlashcardsPage() {
     const card = state.customFlashcards[state.flashcardIndex % Math.max(state.customFlashcards.length, 1)];
     return `<div class="page-shell tool-page">
-      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your classroom materials</span><h1>My flashcards</h1><p>Create cards from class notes or import a TXT/CSV file. Content stays in this browser and is not uploaded to StudyBC.</p></div><div class="course-progress-card"><strong>${state.customFlashcards.length}</strong><span>custom cards saved</span></div></header>
+      <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your classroom materials</span><h1>My flashcards</h1><p>Create cards from class notes or import TXT, CSV, or PDF files. Files are read in your browser and are not uploaded to StudyBC.</p></div><div class="course-progress-card"><strong>${state.customFlashcards.length}</strong><span>custom cards saved</span></div></header>
       <section class="info-box flashcard-tools">
         <form class="flashcard-form" id="custom-flashcard-form"><label for="flashcard-front">Front</label><textarea id="flashcard-front" name="front" rows="2" maxlength="500" required placeholder="Term, question, formula, or prompt"></textarea><label for="flashcard-back">Back</label><textarea id="flashcard-back" name="back" rows="3" maxlength="1500" required placeholder="Definition, answer, or explanation"></textarea><button class="primary-button" type="submit">Add flashcard</button></form>
-        <form class="flashcard-upload-form" id="flashcard-upload-form"><label for="flashcard-file">Import cards (.txt or .csv)</label><input id="flashcard-file" type="file" accept=".txt,.csv,text/plain,text/csv" required><p class="content-note">One card per line: front,back (or use a tab or |). CSV headers such as front,back are optional.</p><button class="secondary-button" type="submit">Import file</button></form>
+        <form class="flashcard-upload-form" id="flashcard-upload-form"><label for="flashcard-file">Choose a file from this device</label><input id="flashcard-file" type="file" accept=".txt,.csv,.pdf,text/plain,text/csv,application/pdf" required><p class="content-note">TXT/CSV: use one question-and-answer pair per line. PDFs are text-extracted locally; scanned/image-only PDFs need OCR and are not supported.</p><button class="secondary-button" type="submit" ${state.flashcardBusy ? 'disabled' : ''}>${state.flashcardBusy ? 'Reading file…' : 'Import file'}</button></form>
       </section>
+      ${state.flashcardDraftText ? `<form class="flashcard-upload-form flashcard-pdf-review" id="flashcard-extracted-form"><label for="flashcard-extracted-text">Review extracted text from ${escapeHtml(state.flashcardDraftName)}</label><textarea id="flashcard-extracted-text" name="text" rows="12" maxlength="500000" required>${escapeHtml(state.flashcardDraftText)}</textarea><p class="content-note">Edit into one pair per line: question — answer. Separate terms and definitions with a colon, comma, tab, |, arrow, or em dash.</p><button class="primary-button" type="submit">Create flashcards from PDF</button></form>` : ''}
       ${state.flashcardNotice ? `<p class="storage-notice" role="status">${escapeHtml(state.flashcardNotice)}</p>` : ''}
       ${card ? `<section class="info-box flashcard-review"><div class="practice-heading"><div><span class="eyebrow">Active recall</span><h2>Card ${state.flashcardIndex % state.customFlashcards.length + 1} of ${state.customFlashcards.length}</h2></div><span class="question-count">Your material</span></div><article class="custom-flashcard" aria-live="polite"><span class="eyebrow">${state.flashcardRevealed ? 'Answer' : 'Prompt'}</span><p>${escapeHtml(state.flashcardRevealed ? card.back : card.front)}</p></article><div class="flashcard-actions">${state.flashcardRevealed ? `<button class="secondary-button" type="button" data-flashcard-action="again">Review again</button><button class="primary-button" type="button" data-flashcard-action="next">Got it · next</button>` : `<button class="primary-button" type="button" data-flashcard-action="reveal">Reveal answer</button>`}</div><details class="custom-card-list"><summary>Manage ${state.customFlashcards.length} saved cards</summary><ul>${state.customFlashcards.map((item, index) => `<li><span><strong>${escapeHtml(item.front)}</strong><small>${escapeHtml(item.back)}</small></span><button class="secondary-button" type="button" data-delete-flashcard="${index}" aria-label="Delete ${escapeHtml(item.front)}">Delete</button></li>`).join('')}</ul></details></section>` : `<section class="info-box"><h2>No custom cards yet</h2><p>Add one above or import a class-notes file to start practicing.</p></section>`}
     </div>`;
@@ -1211,39 +1281,54 @@
       event.preventDefault();
       const file = form.querySelector('#flashcard-file').files?.[0];
       if (!file) {
-        state.flashcardNotice = 'Choose a TXT or CSV file first.';
+        state.flashcardNotice = 'Choose a TXT, CSV, or PDF file first.';
         render();
         return;
       }
-      if (file.size > 1024 * 1024) {
-        state.flashcardNotice = 'Files must be 1 MB or smaller.';
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (file.size > (isPdf ? 10 : 1) * 1024 * 1024) {
+        state.flashcardNotice = isPdf ? 'PDFs must be 10 MB or smaller.' : 'TXT and CSV files must be 1 MB or smaller.';
         render();
         return;
       }
-      file.text().then(text => {
-        const cards = parseFlashcardFile(text);
-        if (!cards.length) {
-          state.flashcardNotice = 'No cards found. Add one front/back pair per line, separated by a comma, tab, or |.';
-          render();
-          return;
-        }
-        const importedCount = Math.min(cards.length, 500 - state.customFlashcards.length);
-        if (!importedCount) {
-          state.flashcardNotice = 'The local deck limit is 500 cards. Delete cards before importing more.';
-          render();
-          return;
-        }
-        state.customFlashcards = [...cards.slice(0, importedCount), ...state.customFlashcards];
-        state.flashcardIndex = 0;
-        state.flashcardRevealed = false;
-        state.flashcardNotice = `${importedCount} card${importedCount === 1 ? '' : 's'} imported${cards.length > 200 ? ' (first 200 from file)' : ''}.`;
-        saveCustomFlashcards();
+      if (isPdf) {
+        state.flashcardBusy = true;
+        state.flashcardNotice = 'Reading PDF text locally…';
         render();
-      }).catch(error => {
-        console.error('StudyBC could not read the selected flashcard file.', error);
-        state.flashcardNotice = 'The selected file could not be read.';
-        render();
-      });
+        extractPdfText(file).then(text => {
+          state.flashcardBusy = false;
+          if (!text) {
+            state.flashcardNotice = 'No selectable text found. This may be a scanned PDF; OCR is not supported.';
+          } else {
+            state.flashcardDraftText = text.slice(0, 500000);
+            state.flashcardDraftName = file.name;
+            state.flashcardNotice = 'PDF text extracted. Review it below and format each card as a question — answer.';
+          }
+          render();
+        }).catch(error => {
+          console.error('StudyBC could not extract text from the selected PDF.', error);
+          state.flashcardBusy = false;
+          state.flashcardNotice = error.message || 'The PDF could not be read. Try a text-based PDF or a TXT/CSV file.';
+          render();
+        });
+      } else {
+        file.text().then(text => {
+          importFlashcards(parseFlashcardFile(text));
+          render();
+        }).catch(error => {
+          console.error('StudyBC could not read the selected flashcard file.', error);
+          state.flashcardNotice = 'The selected file could not be read.';
+          render();
+        });
+      }
+    } else if (form.id === 'flashcard-extracted-form') {
+      event.preventDefault();
+      state.flashcardDraftText = String(new FormData(form).get('text') || '');
+      if (importFlashcards(parseFlashcardFile(state.flashcardDraftText))) {
+        state.flashcardDraftText = '';
+        state.flashcardDraftName = '';
+      }
+      render();
     } else if (form.id === 'tutor-form') {
       event.preventDefault();
       const course = courseById(state.tutorCourseId);

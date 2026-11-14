@@ -712,13 +712,24 @@ button {
 }
 
 .flashcard-form textarea,
-.flashcard-upload-form input {
+.flashcard-upload-form input,
+.flashcard-upload-form textarea {
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
   color: var(--ink);
+}
+
+.flashcard-upload-form textarea {
+  min-height: 160px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.flashcard-pdf-review {
+  margin-top: 16px;
 }
 
 .flashcard-review {
