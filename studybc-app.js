@@ -565,10 +565,10 @@
     return `<div class="page-shell tool-page">
       <header class="course-header"><div class="course-header-main"><span class="eyebrow">Your learning dashboard</span><h1>Progress tracker</h1><p>Organized by grade. Mastered lessons, curriculum topics that still need full lessons, and quiz scores are tracked separately on this device.</p></div><div class="course-progress-card"><strong>${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%</strong><span>${totals.completed} of ${totals.total} authored lessons complete</span><div class="progress-track"><span style="width:${totals.total ? Math.round(totals.completed / totals.total * 100) : 0}%"></span></div><small>${totals.mapped} curriculum topics still need full lessons</small></div></header>
       <section class="info-box"><span class="eyebrow">Courses by grade</span><h2>Learning progress</h2>${groupedCourses.map(group => `<section class="grade-progress-group"><h3>${group.grade === 'AP' ? 'Advanced Placement' : `Grade ${group.grade}`}</h3><div class="tracker-list">${group.courses.map(course => {
-        const stats = courseProgress(course);
-        const percent = stats.percent;
-        return `<article class="tracker-row"><div><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.area)} · ${stats.total ? `${stats.completed}/${stats.total} authored lessons` : `${stats.mapped} topics need authored lessons`}${isInMyList(course.id) ? ' · In My list' : ''}</small></div><strong>${stats.total ? `${percent}%` : 'Not started'}</strong><div class="progress-track"><span style="width:${percent}%"></span></div></article>`;
-      }).join('')}</div></section>`).join('')}</section>
+      const stats = courseProgress(course);
+      const percent = stats.percent;
+      return `<article class="tracker-row"><div><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.area)} · ${stats.total ? `${stats.completed}/${stats.total} authored lessons` : `${stats.mapped} topics need authored lessons`}${isInMyList(course.id) ? ' · In My list' : ''}</small></div><strong>${stats.total ? `${percent}%` : 'Not started'}</strong><div class="progress-track"><span style="width:${percent}%"></span></div></article>`;
+    }).join('')}</div></section>`).join('')}</section>
       <section class="info-box"><span class="eyebrow">Quiz and test results</span><h2>Scores by grade</h2>${recentAttempts.length ? attemptsByGrade.map(group => `<section class="grade-progress-group"><h3>${group.grade === 'AP' ? 'Advanced Placement' : `Grade ${group.grade}`}</h3><div class="tracker-list">${group.attempts.map(attempt => `<article class="tracker-row score-row"><div><strong>${escapeHtml(attempt.courseTitle)} · ${escapeHtml(attempt.label)}</strong><small>${escapeHtml(new Date(attempt.date).toLocaleString())} · ${attempt.correct}/${attempt.total} correct</small></div><strong>${attempt.percent}%</strong></article>`).join('')}</div></section>`).join('') : '<p>No scored assessments yet. Take a unit quiz or course test to see your results here.</p>'}</section>
     </div>`;
   }
@@ -596,10 +596,10 @@
       <section class="info-box assessment-controls"><label>Course<select id="quiz-course">${data.courses.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === course.id ? 'selected' : ''}>${escapeHtml(item.title)}</option>`).join('')}</select></label><label>Unit or test<select id="quiz-unit"><option value="All units" ${state.quizUnit === 'All units' ? 'selected' : ''}>Full course test</option>${course.units.map(unit => `<option value="${escapeHtml(unit.name)}" ${state.quizUnit === unit.name ? 'selected' : ''}>${escapeHtml(unit.name)} quiz</option>`).join('')}</select></label></section>
       ${latest ? `<section class="score-card" role="status"><span class="eyebrow">Last score</span><strong>${latest.percent}%</strong><p>${latest.correct} of ${latest.total} correct — ${latest.percent >= 80 ? 'strong work; keep building on it.' : 'review the explanations and try again.'}</p><details class="quiz-review"><summary>Review answers and explanations</summary>${(latest.review || []).map((item, index) => `<article class="quiz-review-item"><strong>${index + 1}. ${escapeHtml(item.question)}</strong><p>Your answer: ${escapeHtml(item.selected || 'No answer selected')}</p><p>Correct answer: ${escapeHtml(item.answer)}</p><p>${escapeHtml(item.explanation)}</p></article>`).join('')}</details><button class="secondary-button" type="button" data-clear-quiz>Start a new attempt</button></section>` : ''}
       ${state.quizActive ? `<section class="info-box"><div class="practice-heading"><div><span class="eyebrow">${escapeHtml(mode)}</span><h2>Answer every question</h2></div><span class="question-count">${questions.length} questions</span></div>${questions.length ? `<div class="quiz-question-list">${questions.map((item, index) => {
-        const key = assessmentKey(item.lesson, item.id);
-        const selected = state.quizSelections[key];
-        return `<article class="practice-item"><span class="question-number">Question ${index + 1} · ${escapeHtml(item.lesson.title)}</span><p class="question-prompt">${escapeHtml(item.question.question)}</p><div class="mcq-list">${item.question.options.map((option, optionIndex) => `<button type="button" class="option-button ${selected === optionIndex ? 'selected' : ''}" data-quiz-choice="${escapeHtml(key)}" data-choice="${optionIndex}"><span class="option-letter">${String.fromCharCode(65 + optionIndex)}</span>${escapeHtml(option)}</button>`).join('')}</div></article>`;
-      }).join('')}<button class="primary-button" type="button" data-submit-quiz>Submit ${escapeHtml(mode.toLowerCase())}</button></div>` : '<p>There are no scored multiple-choice questions in this selection yet. Try another unit or return to lessons for reflection practice.</p>'}</section>` : `<section class="info-box"><h2>Ready when you are</h2><p>${questions.length ? `${questions.length} scored questions are available. Choose a unit to make a focused quiz, or use the full course test.` : 'This selection has no scored multiple-choice questions yet.'} Reflections are kept in the lesson practice and are not treated as right-or-wrong test answers.</p><button class="primary-button" type="button" data-start-quiz ${questions.length ? '' : 'disabled'}>Start ${escapeHtml(mode.toLowerCase())}</button></section>`}
+      const key = assessmentKey(item.lesson, item.id);
+      const selected = state.quizSelections[key];
+      return `<article class="practice-item"><span class="question-number">Question ${index + 1} · ${escapeHtml(item.lesson.title)}</span><p class="question-prompt">${escapeHtml(item.question.question)}</p><div class="mcq-list">${item.question.options.map((option, optionIndex) => `<button type="button" class="option-button ${selected === optionIndex ? 'selected' : ''}" data-quiz-choice="${escapeHtml(key)}" data-choice="${optionIndex}"><span class="option-letter">${String.fromCharCode(65 + optionIndex)}</span>${escapeHtml(option)}</button>`).join('')}</div></article>`;
+    }).join('')}<button class="primary-button" type="button" data-submit-quiz>Submit ${escapeHtml(mode.toLowerCase())}</button></div>` : '<p>There are no scored multiple-choice questions in this selection yet. Try another unit or return to lessons for reflection practice.</p>'}</section>` : `<section class="info-box"><h2>Ready when you are</h2><p>${questions.length ? `${questions.length} scored questions are available. Choose a unit to make a focused quiz, or use the full course test.` : 'This selection has no scored multiple-choice questions yet.'} Reflections are kept in the lesson practice and are not treated as right-or-wrong test answers.</p><button class="primary-button" type="button" data-start-quiz ${questions.length ? '' : 'disabled'}>Start ${escapeHtml(mode.toLowerCase())}</button></section>`}
     </div>`;
   }
 
@@ -787,21 +787,21 @@
       <button class="sidebar-course-link" type="button" data-open-course="${escapeHtml(course.id)}">Course overview</button>
       <nav class="sidebar-tree">
         ${course.units.map(unit => {
-          const unitLessons = course.lessons.filter(item => item.unit === unit.name);
-          const groups = unit.subunits?.length ? unit.subunits : [{ name: '', lessonIds: unitLessons.map(item => item.id) }];
-          const groupedIds = new Set(groups.flatMap(group => group.lessonIds || []));
-          const looseLessons = unitLessons.filter(item => !groupedIds.has(item.id) && !groups.some(group => group.name && item.subunit === group.name));
-          return `<section class="tree-section">
+      const unitLessons = course.lessons.filter(item => item.unit === unit.name);
+      const groups = unit.subunits?.length ? unit.subunits : [{ name: '', lessonIds: unitLessons.map(item => item.id) }];
+      const groupedIds = new Set(groups.flatMap(group => group.lessonIds || []));
+      const looseLessons = unitLessons.filter(item => !groupedIds.has(item.id) && !groups.some(group => group.name && item.subunit === group.name));
+      return `<section class="tree-section">
           <div class="tree-label">${escapeHtml(unit.name)}</div>
           ${groups.map(group => {
-            const groupLessons = unitLessons.filter(item => (group.lessonIds || []).includes(item.id) || (group.name && item.subunit === group.name));
-            return `${group.name ? `<div class="tree-subunit-label">${escapeHtml(group.name)}</div>` : ''}<div class="tree-children">${groupLessons.map(item =>
-              lessonLink(course, item, item.id === lesson?.id && state.view === 'lesson' ? 'selected' : '')
-            ).join('') || '<span class="tree-empty">No topics mapped in this subunit.</span>'}</div>`;
-          }).join('')}
+        const groupLessons = unitLessons.filter(item => (group.lessonIds || []).includes(item.id) || (group.name && item.subunit === group.name));
+        return `${group.name ? `<div class="tree-subunit-label">${escapeHtml(group.name)}</div>` : ''}<div class="tree-children">${groupLessons.map(item =>
+          lessonLink(course, item, item.id === lesson?.id && state.view === 'lesson' ? 'selected' : '')
+        ).join('') || '<span class="tree-empty">No topics mapped in this subunit.</span>'}</div>`;
+      }).join('')}
           ${looseLessons.length ? `<div class="tree-subunit-label">Additional lessons</div><div class="tree-children">${looseLessons.map(item => lessonLink(course, item, item.id === lesson?.id && state.view === 'lesson' ? 'selected' : '')).join('')}</div>` : ''}
         </section>`;
-        }).join('')}
+    }).join('')}
       </nav>
       <div class="sidebar-progress">
         <div class="progress-label"><span>Your progress</span><strong>${courseProgress(course).percent}%</strong></div>
@@ -852,8 +852,8 @@
         ${renderSearchResults(state.search)}
         <div class="filter-row">
           <div class="grade-pills" aria-label="Filter by grade">${['All', ...data.grades].map(grade =>
-            `<button class="pill ${state.grade === grade ? 'active' : ''}" data-grade="${escapeHtml(grade)}" type="button">${grade === 'All' ? 'All grades' : grade === 'AP' ? 'AP' : `Grade ${grade}`}</button>`
-          ).join('')}</div>
+      `<button class="pill ${state.grade === grade ? 'active' : ''}" data-grade="${escapeHtml(grade)}" type="button">${grade === 'All' ? 'All grades' : grade === 'AP' ? 'AP' : `Grade ${grade}`}</button>`
+    ).join('')}</div>
           <label class="subject-filter"><span>Subject</span><select id="subject-filter" aria-label="Filter by subject">
             <option value="All">All subjects</option>
             ${subjects.map(subject => `<option value="${escapeHtml(subject)}" ${state.subject === subject ? 'selected' : ''}>${escapeHtml(subject)}</option>`).join('')}
@@ -882,8 +882,8 @@
         <div class="section-heading"><div><span class="eyebrow">Browse the library</span><h2>Courses</h2></div><span>${courses.length} ${courses.length === 1 ? 'course' : 'courses'}</span></div>
         <p class="catalog-note">Full lessons include explanations, worked examples, and practice. Curriculum outline entries are clearly identified until their lesson content is written. Official links let you check the complete standards.</p>
         ${courses.length ? `<div class="course-grid">${courses.map(course => {
-          const stats = courseProgress(course);
-          return `<article class="course-card">
+      const stats = courseProgress(course);
+      return `<article class="course-card">
             <div class="course-card-art" aria-hidden="true"><i class="fa-solid ${subjectIcon(course.area)}"></i><span>${escapeHtml(course.area)}</span></div>
             <div class="card-topline"><span class="grade-chip">${course.grade === 'AP' ? 'AP' : `Grade ${escapeHtml(course.grade)}`}</span><span class="course-subject">${escapeHtml(course.area)}</span><span class="catalog-badge ${stats.total ? 'active' : 'mapped'}">${stats.total ? 'Lessons & curriculum map' : 'Curriculum outline'}</span></div>
             <h3>${escapeHtml(course.title)}</h3><p>${escapeHtml(course.summary)}</p>
@@ -893,7 +893,7 @@
               <button class="secondary-button list-toggle ${isInMyList(course.id) ? 'saved' : ''}" type="button" data-toggle-my-list="${escapeHtml(course.id)}" aria-pressed="${isInMyList(course.id)}">${isInMyList(course.id) ? 'In My list' : '＋ My list'}</button>
             </div>
           </article>`;
-        }).join('')}</div>` : `<div class="empty-state"><h3>No matching courses</h3><p>Try a different search or remove a filter.</p><button class="secondary-button" data-reset-filters type="button">Reset filters</button></div>`}
+    }).join('')}</div>` : `<div class="empty-state"><h3>No matching courses</h3><p>Try a different search or remove a filter.</p><button class="secondary-button" data-reset-filters type="button">Reset filters</button></div>`}
       </section>
     </div>`;
   }
@@ -909,22 +909,22 @@
           <div class="info-box"><span class="eyebrow">Course guide</span><h2>Big ideas</h2>${course.bigIdeas.map(idea => `<article class="idea-item"><strong>${escapeHtml(idea.title)}</strong><p>${escapeHtml(idea.detail)}</p></article>`).join('')}</div>
           <div class="info-box"><span class="eyebrow">Learning pathway</span><h2>Units & lessons</h2><div class="unit-list">
             ${course.units.map((unit, index) => {
-              const unitLessons = course.lessons.filter(lesson => lesson.unit === unit.name);
-              const groups = unit.subunits?.length ? unit.subunits : [{ name: '', lessonIds: unitLessons.map(lesson => lesson.id) }];
-              const groupedIds = new Set(groups.flatMap(group => group.lessonIds || []));
-              const looseLessons = unitLessons.filter(lesson => !groupedIds.has(lesson.id) && !groups.some(group => group.name && lesson.subunit === group.name));
-              const unitPublished = unitLessons.filter(lesson => lesson.published !== false);
-              const unitCompleted = unitPublished.filter(lesson => isLessonComplete(course, lesson)).length;
-              const unitPercent = unitPublished.length ? Math.round(unitCompleted / unitPublished.length * 100) : 0;
-              return `<section class="unit-card"><div class="unit-header"><h3><span class="unit-number">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(unit.name)}</h3><span>${unitLessons.length} topics</span></div><p>${escapeHtml(unit.summary)}</p>
+      const unitLessons = course.lessons.filter(lesson => lesson.unit === unit.name);
+      const groups = unit.subunits?.length ? unit.subunits : [{ name: '', lessonIds: unitLessons.map(lesson => lesson.id) }];
+      const groupedIds = new Set(groups.flatMap(group => group.lessonIds || []));
+      const looseLessons = unitLessons.filter(lesson => !groupedIds.has(lesson.id) && !groups.some(group => group.name && lesson.subunit === group.name));
+      const unitPublished = unitLessons.filter(lesson => lesson.published !== false);
+      const unitCompleted = unitPublished.filter(lesson => isLessonComplete(course, lesson)).length;
+      const unitPercent = unitPublished.length ? Math.round(unitCompleted / unitPublished.length * 100) : 0;
+      return `<section class="unit-card"><div class="unit-header"><h3><span class="unit-number">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(unit.name)}</h3><span>${unitLessons.length} topics</span></div><p>${escapeHtml(unit.summary)}</p>
               ${unitPublished.length ? `<div class="unit-progress"><div class="progress-label"><span>${unitCompleted} of ${unitPublished.length} authored lessons complete</span><strong>${unitPercent}%</strong></div><div class="progress-track"><span style="width:${unitPercent}%"></span></div></div>` : `<small class="mapped-count">${unitLessons.length} curriculum topics still need full lessons</small>`}
               ${groups.map(group => {
-                const groupLessons = unitLessons.filter(lesson => (group.lessonIds || []).includes(lesson.id) || (group.name && lesson.subunit === group.name));
-                return `<div class="subunit-block">${group.name ? `<h4>${escapeHtml(group.name)}</h4>` : ''}<div class="unit-lessons">${groupLessons.map(lesson => `<button type="button" class="overview-lesson ${lesson.published === false ? 'topic-guide-link' : ''}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.published === false ? 'Curriculum outline · lesson in progress' : `${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions`}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('') || '<p class="tree-empty">No curriculum topics mapped in this subunit.</p>'}</div></div>`;
-              }).join('')}
+        const groupLessons = unitLessons.filter(lesson => (group.lessonIds || []).includes(lesson.id) || (group.name && lesson.subunit === group.name));
+        return `<div class="subunit-block">${group.name ? `<h4>${escapeHtml(group.name)}</h4>` : ''}<div class="unit-lessons">${groupLessons.map(lesson => `<button type="button" class="overview-lesson ${lesson.published === false ? 'topic-guide-link' : ''}" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.published === false ? 'Curriculum outline · lesson in progress' : `${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions`}</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('') || '<p class="tree-empty">No curriculum topics mapped in this subunit.</p>'}</div></div>`;
+      }).join('')}
               ${looseLessons.length ? `<div class="subunit-block"><h4>Additional lessons</h4><div class="unit-lessons">${looseLessons.map(lesson => `<button type="button" class="overview-lesson" data-open-lesson="${escapeHtml(course.id)}|${escapeHtml(lesson.id)}"><span><strong>${escapeHtml(lesson.title)}</strong><small>${escapeHtml(lesson.time)} · ${lesson.practice.length} practice questions</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`).join('')}</div></div>` : ''}
             </section>`;
-            }).join('')}
+    }).join('')}
           </div></div>
         </section>
         <aside class="summary-stack">
@@ -1108,16 +1108,16 @@
     const course = currentCourse();
     const content = state.view === 'home' ? renderHome()
       : state.view === 'mylist' ? renderMyListPage()
-      : state.view === 'course' ? renderCourseOverview(course)
-        : state.view === 'lesson' ? renderLesson(course)
-          : state.view === 'progress' ? renderProgressPage()
-            : state.view === 'quizzes' ? renderQuizPage()
-            : state.view === 'flashcards' ? renderFlashcardsPage()
-            : state.view === 'tutor' ? renderTutorPage()
-                : state.view === 'about' ? renderAboutPage()
-                  : state.view === 'sources' ? renderSourcesPage()
-                    : state.view === 'focus' ? renderFocusTimerPage()
-                      : renderFeedbackPage();
+        : state.view === 'course' ? renderCourseOverview(course)
+          : state.view === 'lesson' ? renderLesson(course)
+            : state.view === 'progress' ? renderProgressPage()
+              : state.view === 'quizzes' ? renderQuizPage()
+                : state.view === 'flashcards' ? renderFlashcardsPage()
+                  : state.view === 'tutor' ? renderTutorPage()
+                    : state.view === 'about' ? renderAboutPage()
+                      : state.view === 'sources' ? renderSourcesPage()
+                        : state.view === 'focus' ? renderFocusTimerPage()
+                          : renderFeedbackPage();
     root.innerHTML = `<div class="studybc-app ${showSidebar ? 'with-sidebar' : 'home-layout'}">
       ${showSidebar ? renderSidebar() : ''}
       <main class="main-panel">
