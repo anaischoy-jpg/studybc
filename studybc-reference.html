@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBC curriculum source snapshot</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateHome()">
+                <div class="bg-brand-600 text-white p-2 rounded-lg shadow-md flex items-center justify-center font-bold text-xl w-10 h-10">
+                    BC
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">BC Curriculum Hub</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">Grades 10 to AP Study Center</span>
+                </div>
+            </div>
+
+            <!-- Search Bar in Header -->
+            <div class="hidden md:flex items-center relative w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-sm"></i>
+                <input type="text" id="globalSearch" placeholder="Search lessons, units, formulas..." 
+                    class="w-full pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-slate-700 text-sm rounded-full border border-transparent focus:border-brand-500 focus:outline-none dark:text-white"
+                    oninput="handleSearch(this.value)">
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition" title="Toggle Dark/Light Mode">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+                <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium">
+                    <button onclick="navigateHome()" class="hover:text-brand-600 dark:hover:text-brand-400 transition">Home</button>
+                    <a href="#subjects" onclick="navigateHome()" class="hover:text-brand-600 dark:hover:text-brand-400 transition">Subjects</a>
+                    <button onclick="showPracticeHub()" class="hover:text-brand-600 dark:hover:text-brand-400 transition">Practice Hub</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <!-- Breadcrumbs -->
+        <nav id="breadcrumbNav" class="flex text-sm text-slate-500 dark:text-slate-400 mb-6 space-x-2 items-center">
+            <button onclick="navigateHome()" class="hover:text-brand-600 dark:hover:text-brand-400"><i class="fa-solid fa-house mr-1"></i> Home</button>
+        </nav>
+
+        <!-- Dynamic Content Viewport -->
+        <div id="appView">
+            <!-- Dynamically populated via JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+            <p>&copy; 2026 BC Curriculum Study Hub. Aligned with British Columbia Ministry of Education standards.</p>
+            <div class="flex space-x-4 mt-4 sm:mt-0">
+                <span class="hover:text-brand-600 cursor-pointer" onclick="navigateHome()">Home</span>
+                <span class="hover:text-brand-600 cursor-pointer" onclick="showPracticeHub()">Practice Hub</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Application Logic & Data Store -->
+    <script>
+        // Database of Subjects, Units, and Lessons aligned with BC Curriculum
+        const curriculumData = [
+            {
+                id: "math-10",
+                title: "Foundations of Math & Pre-Calculus 10",
+                category: "Mathematics",
+                badge: "Grade 10",
+                icon: "fa-square-root-variable",
+                color: "emerald",
+                description: "Covers measurement systems, trigonometry, factors and products, roots and powers, linear functions, and systems of linear equations.",
+                units: [
+                    {
+                        id: "m10-u1",
+                        title: "Unit 1: Measurement & Trigonometry",
+                        lessons: [
+                            {
+                                id: "m10-u1-l1",
+                                title: "1.1 SI and Imperial Units of Measure",
+                                summary: "Understand length conversions between Metric (SI) and Imperial systems using proportional reasoning.",
+                                content: `
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Key Concepts & Formulas</h3>
+                                    <p class="mb-4">In British Columbia, both SI (metric) and Imperial systems are utilized. Converting between them requires precise unit multipliers.</p>
+                                    <div class="bg-emerald-50 dark:bg-emerald-900/30 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 mb-6">
+                                        <ul class="list-disc list-inside space-y-2 text-slate-700 dark:text-slate-300">
+                                            <li>$1\text{ in.} = 2.54\text{ cm}$ exactly.</li>
+                                            <li>$1\text{ ft.} = 12\text{ in.} \approx 30\text{ cm}$.</li>
+                                            <li>$1\text{ mi.} \approx 1.6\text{ km}$.</li>
+                                        </ul>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">How to Convert Units</h3>
+                                    <p class="mb-4">To convert imperial length to metric, multiply by the appropriate conversion factor. For example, to convert 60 inches to centimeters:</p>
+                                    <p class="font-mono bg-slate-100 dark:bg-slate-800 p-3 rounded mb-4">$60\text{ in.} \times 2.54\text{ cm/in.} = 152.4\text{ cm}$</p>
+                                `,
+                                practice: [
+                                    {
+                                        question: "Convert 15 feet into inches.",
+                                        options: ["120 inches", "180 inches", "200 inches", "240 inches"],
+                                        correct: 1,
+                                        explanation: "Since 1 foot = 12 inches, multiply $15 \times 12 = 180$ inches."
+                                    },
+                                    {
+                                        question: "What is approximately 5 miles in kilometers?",
+                                        options: ["5.0 km", "8.0 km", "3.1 km", "10.2 km"],
+                                        correct: 1,
+                                        explanation: "Using the conversion $1\text{ mi.} \approx 1.6\text{ km}$, $5 \times 1.6 = 8.0\text{ km}$."
+                                    }
+                                ]
+                            },
+                            {
+                                id: "m10-u1-l2",
+                                title: "1.2 Right Triangle Trigonometry",
+                                summary: "Master Sine, Cosine, and Tangent ratios to solve for unknown side lengths and angles in right-angled triangles.",
+                                content: `
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">The Trigonometric Ratios (SOH CAH TOA)</h3>
+                                    <p class="mb-4">In any right triangle with angle $\theta$:</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                        <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+                                            <h4 class="font-bold text-brand-600">SOH</h4>
+                                            <p class="font-mono mt-1">$\sin(\theta) = \frac{\text{Opposite}}{\text{Hypotenuse}}$</p>
+                                        </div>
+                                        <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+                                            <h4 class="font-bold text-brand-600">CAH</h4>
+                                            <p class="font-mono mt-1">$\cos(\theta) = \frac{\text{Adjacent}}{\text{Hypotenuse}}$</p>
+                                        </div>
+                                        <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+                                            <h4 class="font-bold text-brand-600">TOA</h4>
+                                            <p class="font-mono mt-1">$\tan(\theta) = \frac{\text{Opposite}}{\text{Adjacent}}$</p>
+                                        </div>
+                                    </div>
+                                `,
+                                practice: [
+                                    {
+                                        question: "If the opposite side is 3 and the adjacent side is 4, what is the tangent ratio?",
+                                        options: ["0.75", "1.33", "0.60", "0.80"],
+                                        correct: 0,
+                                        explanation: "$\tan(\theta) = \frac{\text{Opposite}}{\text{Adjacent}} = \frac{3}{4} = 0.75$."
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "m10-u2",
+                        title: "Unit 2: Factors and Products",
+                        lessons: [
+                            {
+                                id: "m10-u2-l1",
+                                title: "2.1 Factors and Multiples of Whole Numbers",
+                                summary: "Prime factorization, greatest common factor (GCF), and least common multiple (LCM).",
+                                content: `<p class="mb-4">Factoring expressions and numbers is fundamental for simplifying algebraic rational expressions in higher grades.</p>`,
+                                practice: [
+                                    {
+                                        question: "What is the Greatest Common Factor (GCF) of 24 and 36?",
+                                        options: ["6", "8", "12", "18"],
+                                        correct: 2,
+                                        explanation: "The factors of 24 are 1,2,3,4,6,8,12,24. Factors of 36 include 12 as the highest common factor."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "chem-11",
+                title: "Chemistry 11",
+                category: "Science",
+                badge: "Grade 11",
+                icon: "fa-flask",
+                color: "blue",
+                description: "Explore the mole concept, chemical reactions, solution chemistry, stoichiometry, and atomic theory.",
+                units: [
+                    {
+                        id: "c11-u1",
+                        title: "Unit 1: The Mole Concept",
+                        lessons: [
+                            {
+                                id: "c11-u1-l1",
+                                title: "1.1 Introduction to Molar Mass and Avogadro's Number",
+                                summary: "Understand how chemists count atoms and molecules using the mole ($6.022 \times 10^{23}$).",
+                                content: `
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Avogadro's Constant ($N_A$)</h3>
+                                    <p class="mb-4">One mole of any substance contains exactly $6.02214076 \times 10^{23}$ representative particles. Molar mass ($M$) is expressed in $\text{g/mol}$.</p>
+                                `,
+                                practice: [
+                                    {
+                                        question: "What is the molar mass of Water ($H_2O$)? (H=1.01, O=16.00)",
+                                        options: ["17.02 g/mol", "18.02 g/mol", "20.00 g/mol", "34.02 g/mol"],
+                                        correct: 1,
+                                        explanation: "$2(1.01) + 16.00 = 18.02\text{ g/mol}$."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "ap-calc",
+                title: "AP Calculus AB/BC",
+                category: "Advanced Placement",
+                badge: "AP Level",
+                icon: "fa-chart-line",
+                color: "purple",
+                description: "Limits, derivatives, definite and indefinite integrals, series convergence, and parametric/polar equations.",
+                units: [
+                    {
+                        id: "ap-u1",
+                        title: "Unit 1: Limits and Continuity",
+                        lessons: [
+                            {
+                                id: "ap-u1-l1",
+                                title: "1.1 Defining Limits and Evaluating Graphically",
+                                summary: "Understand the concept of a limit and compute limits from graphs and tables.",
+                                content: `
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Limit Notation</h3>
+                                    <p class="mb-4">$\lim_{x \to c} f(x) = L$ means that as $x$ gets arbitrarily close to $c$ (from both sides), $f(x)$ approaches $L$.</p>
+                                `,
+                                practice: [
+                                    {
+                                        question: "Evaluate $\lim_{x \to 3} (x^2 - 4x + 5)$",
+                                        options: ["2", "3", "5", "8"],
+                                        correct: 0,
+                                        explanation: "Substitute $x = 3$: $(3)^2 - 4(3) + 5 = 9 - 12 + 5 = 2$."
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // State Management
+        let currentView = 'home'; // 'home', 'subject', 'lesson', 'practiceHub'
+        let selectedSubjectId = null;
+        let selectedLessonId = null;
+
+        // Initialize App on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check saved theme preference
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-lg';
+            }
+            renderHome();
+        });
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-lg';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-lg';
+            }
+        }
+
+        function navigateHome() {
+            currentView = 'home';
+            selectedSubjectId = null;
+            selectedLessonId = null;
+            renderHome();
+            updateBreadcrumb();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateBreadcrumb(customTrail = []) {
+            const nav = document.getElementById('breadcrumbNav');
+            let html = `<button onclick="navigateHome()" class="hover:text-brand-600 dark:hover:text-brand-400"><i class="fa-solid fa-house mr-1"></i> Home</button>`;
+            
+            customTrail.forEach(item => {
+                html += `<i class="fa-solid fa-chevron-right text-xs mx-1"></i>`;
+                if (item.onclick) {
+                    html += `<button onclick="${item.onclick}" class="hover:text-brand-600 dark:hover:text-brand-400">${item.title}</button>`;
+                } else {
+                    html += `<span class="text-slate-800 dark:text-slate-200 font-medium">${item.title}</span>`;
+                }
+            });
+            nav.innerHTML = html;
+        }
+
+        // Render Home View
+        function renderHome() {
+            updateBreadcrumb();
+            const container = document.getElementById('appView');
+            container.innerHTML = `
+                <!-- Hero Section -->
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl mb-12 relative overflow-hidden">
+                    <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+                        <i class="fa-solid fa-graduation-cap text-9xl"></i>
+                    </div>
+                    <div class="max-w-2xl relative z-10">
+                        <span class="bg-emerald-500/30 text-emerald-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block">BC Ministry Aligned</span>
+                        <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">Master Your Courses from Grade 10 to AP</h1>
+                        <p class="text-emerald-100 text-lg mb-8">Access structured chapter notes, step-by-step explanations, and interactive practice questions designed for British Columbia students.</p>
+                        <div class="flex flex-wrap gap-4">
+                            <a href="#subjects" class="bg-white text-emerald-800 font-bold px-6 py-3 rounded-xl shadow-md hover:bg-emerald-50 transition">Explore Subjects</a>
+                            <button onclick="showPracticeHub()" class="bg-emerald-800/60 hover:bg-emerald-800 text-white font-bold px-6 py-3 rounded-xl border border-emerald-400/30 transition">Practice Hub</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subjects Section -->
+                <div id="subjects" class="mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Curriculum Subjects</h2>
+                        <span class="text-sm text-slate-500 dark:text-slate-400">${curriculumData.length} Courses Available</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${curriculumData.map(subject => `
+                            <div onclick="selectSubject('${subject.id}')" class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-brand-500 dark:hover:border-brand-500 transition cursor-pointer flex flex-col justify-between group">
+                                <div>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                                            <i class="fa-solid ${subject.icon}"></i>
+                                        </div>
+                                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${subject.badge}</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">${subject.title}</h3>
+                                    <p class="text-slate-600 dark:text-slate-300 text-sm mb-6">${subject.description}</p>
+                                </div>
+                                <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700 text-sm font-semibold text-brand-600 dark:text-brand-400">
+                                    <span>${subject.units.length} Units available</span>
+                                    <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Select Subject View
+        function selectSubject(subjectId) {
+            selectedSubjectId = subjectId;
+            const subject = curriculumData.find(s => s.id === subjectId);
+            if (!subject) return;
+
+            updateBreadcrumb([
+                { title: subject.title }
+            ]);
+
+            const container = document.getElementById('appView');
+            container.innerHTML = `
+                <div class="mb-8">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">${subject.badge}</span>
+                        <span class="text-slate-500 dark:text-slate-400 text-sm">${subject.category}</span>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-3">${subject.title}</h1>
+                    <p class="text-slate-600 dark:text-slate-300 text-lg max-w-3xl">${subject.description}</p>
+                </div>
+
+                <div class="space-y-6">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Course Units & Lessons</h2>
+                    ${subject.units.map((unit, uIdx) => `
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                            <div class="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <h3 class="font-bold text-lg text-slate-900 dark:text-white">${unit.title}</h3>
+                                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${unit.lessons.length} Lessons</span>
+                            </div>
+                            <div class="divide-y divide-slate-100 dark:divide-slate-700">
+                                ${unit.lessons.map(lesson => `
+                                    <div onclick="selectLesson('${subject.id}', '${lesson.id}')" class="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between transition group">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
+                                                <i class="fa-solid fa-book-open"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">${lesson.title}</h4>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400">${lesson.summary}</p>
+                                            </div>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right text-slate-400 text-sm group-hover:translate-x-1 transition"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Select Lesson View
+        function selectLesson(subjectId, lessonId) {
+            selectedSubjectId = subjectId;
+            selectedLessonId = lessonId;
+            const subject = curriculumData.find(s => s.id === subjectId);
+            let targetLesson = null;
+            let targetUnit = null;
+
+            subject.units.forEach(u => {
+                u.lessons.forEach(l => {
+                    if (l.id === lessonId) {
+                        targetLesson = l;
+                        targetUnit = u;
+                    }
+                });
+            });
+
+            if (!targetLesson) return;
+
+            updateBreadcrumb([
+                { title: subject.title, onclick: `select('${subject.id}')` },
+                { title: targetLesson.title }
+            ]);
+
+            const container = document.getElementById('appView');
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Main Lesson Content -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 mb-4 inline-block">${targetUnit.title}</span>
+                            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-4">${targetLesson.title}</h1>
+                            <p class="text-lg text-slate-600 dark:text-slate-300 mb-6 font-medium">${targetLesson.summary}</p>
+                            
+                            <hr class="border-slate-200 dark:border-slate-700 my-6">
+
+                            <!-- Detailed Explanations & Notes -->
+                            <div class="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+                                ${targetLesson.content}
+                            </div>
+                        </div>
+
+                        <!-- Interactive Practice Questions -->
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center">
+                                <i class="fa-solid fa-circle-question text-brand-600 mr-3"></i> Practice Checkpoint
+                            </h3>
+                            <div class="space-y-6">
+                                ${targetLesson.practice.map((q, qIdx) => `
+                                    <div class="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">Question ${qIdx + 1}: ${q.question}</h4>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" id="q-options-${qIdx}">
+                                            ${q.options.map((opt, oIdx) => `
+                                                <button onclick="checkAnswer(${qIdx}, ${oIdx}, ${q.correct})" class="text-left px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700 transition text-sm font-medium text-slate-800 dark:text-slate-200">
+                                                    <span class="font-bold mr-2 text-slate-400">${String.fromCharCode(65 + oIdx)}.</span> ${opt}
+                                                </button>
+                                            `).join('')}
+                                        </div>
+                                        <div id="explanation-${qIdx}" class="hidden mt-4 p-4 rounded-lg text-sm"></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Navigation / Quick Links -->
+                    <div class="space-y-6">
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-4">In This Unit</h3>
+                            <div class="space-y-2">
+                                ${targetUnit.lessons.map(l => `
+                                    <button onclick="selectLesson('${subject.id}', '${l.id}')" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition ${l.id === lessonId ? 'bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}">
+                                        ${l.title}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Answer verification logic
+        function checkAnswer(qIdx, selectedIdx, correctIdx) {
+            const expDiv = document.getElementById(`explanation-${qIdx}`);
+            const buttons = document.querySelectorAll(`#q-options-${qIdx} button`);
+            
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === correctIdx) {
+                    btn.classList.add('bg-emerald-100', 'dark:bg-emerald-900/50', 'border-emerald-500', 'text-emerald-900', 'dark:text-emerald-100');
+                } else if (idx === selectedIdx && selectedIdx !== correctIdx) {
+                    btn.classList.add('bg-rose-100', 'dark:bg-rose-900/50', 'border-rose-500', 'text-rose-900', 'dark:text-rose-100');
+                }
+            });
+
+            expDiv.classList.remove('hidden');
+            const targetSubject = curriculumData.find(s => s.id === selectedSubjectId);
+            // find lesson practice explanation
+            let practiceObj = null;
+            targetSubject.units.forEach(u => u.lessons.forEach(l => {
+                if(l.id === selectedLessonId) practiceObj = l.practice[qIdx];
+            }));
+
+            if (selectedIdx === correctIdx) {
+                expDiv.className = "mt-4 p-4 rounded-lg text-sm bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800";
+                expDiv.innerHTML = `<p class="font-bold mb-1"><i class="fa-solid fa-circle-check mr-1"></i> Correct!</p><p>${practiceObj.explanation}</p>`;
+            } else {
+                expDiv.className = "mt-4 p-4 rounded-lg text-sm bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800";
+                expDiv.innerHTML = `<p class="font-bold mb-1"><i class="fa-solid fa-circle-xmark mr-1"></i> Incorrect.</p><p>${practiceObj.explanation}</p>`;
+            }
+        }
+
+        function showPracticeHub() {
+            updateBreadcrumb([{ title: "Practice Hub" }]);
+            const container = document.getElementById('appView');
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm text-center">
+                        <div class="w-16 h-16 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4">
+                            <i class="fa-solid fa-laptop-code"></i>
+                        </div>
+                        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-3">Practice Hub & Interactive Quizzes</h1>
+                        <p class="text-slate-600 dark:text-slate-300 max-w-xl mx-auto mb-6">Select a course above or test your problem-solving skills across all BC curriculum topics.</p>
+                        <button onclick="navigateHome()" class="bg-brand-600 text-white font-bold px-6 py-3 rounded-xl shadow-md hover:bg-brand-700 transition">Browse Subjects</button>
+                    </div>
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleSearch(query) {
+            if (!query || query.trim() === "") return;
+            const q = query.toLowerCase();
+            // simple matching
+            for (let sub of curriculumData) {
+                for (let unit of sub.units) {
+                    for (let lesson of unit.lessons) {
+                        if (lesson.title.toLowerCase().includes(q) || lesson.summary.toLowerCase().includes(q)) {
+                            selectLesson(sub.id, lesson.id);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

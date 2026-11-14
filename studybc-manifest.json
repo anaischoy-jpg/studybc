@@ -1,0 +1,28 @@
+{
+  "id": "./index.html",
+  "name": "StudyBC — Learn at your own pace",
+  "short_name": "StudyBC",
+  "description": "A self-study library for BC and AP courses.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#f4f7fb",
+  "theme_color": "#f4f7fb",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "./studybc-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./studybc-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
